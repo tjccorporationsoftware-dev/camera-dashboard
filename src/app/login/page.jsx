@@ -6,24 +6,28 @@ import { useRouter } from "next/navigation";
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
 const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 
 const inputClass =
-  "h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
+  "h-11 w-full rounded-2xl border border-sky-100 bg-white/95 px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-sky-50 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
 
 const primaryButton =
-  "inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function getApiBaseUrl() {
-  const url =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL;
+function normalizeBaseUrl(url) {
+  return String(url || "").trim().replace(/\/+$/, "");
+}
 
-  return url.endsWith("/") ? url.slice(0, -1) : url;
+function getApiBaseUrl() {
+  return normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:4000/api"
+  );
 }
 
 async function readJson(response) {
@@ -132,18 +136,21 @@ export default function LoginPage() {
 
   return (
     <main
-      className="min-h-screen bg-slate-50 px-6 py-8 text-slate-900"
+      className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.42),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.32),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_45%,#f8fafc_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:py-8"
       style={{ fontFamily: APP_FONT_FAMILY }}
     >
-      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1180px] items-center justify-center">
-        <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="hidden border-r border-slate-200 bg-slate-50 p-8 lg:flex lg:flex-col lg:justify-between">
-            <div>
-              <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+      <div className="mx-auto flex min-h-[calc(100vh-48px)] max-w-[1180px] items-center justify-center">
+        <section className="grid w-full overflow-hidden rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_24px_80px_rgba(15,23,42,0.09)] ring-1 ring-white/80 backdrop-blur-xl lg:grid-cols-[1.06fr_0.94fr]">
+          <div className="relative hidden overflow-hidden border-r border-sky-100/80 bg-gradient-to-br from-sky-50/85 via-white to-blue-50/55 p-8 lg:flex lg:flex-col lg:justify-between">
+            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-sky-200/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
+
+            <div className="relative">
+              <div className="inline-flex rounded-full border border-sky-100 bg-white/85 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-50">
                 Secure Access
               </div>
 
-              <h1 className="mt-5 max-w-md text-3xl font-bold tracking-tight text-slate-900">
+              <h1 className="mt-5 max-w-md text-3xl font-black tracking-tight text-slate-950">
                 Camera Management Dashboard
               </h1>
 
@@ -173,22 +180,40 @@ export default function LoginPage() {
               </div>
             </div>
 
-           
+            <div className="relative mt-8 rounded-3xl border border-sky-100 bg-white/75 p-4 shadow-sm shadow-sky-100">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-600 text-white shadow-lg shadow-blue-100">
+                  <LoginIcon name="key" />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-slate-900">
+                    Internal Secure Console
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-slate-500">
+                    เข้าสู่ระบบด้วยบัญชีที่ได้รับอนุญาตเท่านั้น
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleLogin} className="p-6 sm:p-8 lg:p-10">
+          <form
+            onSubmit={handleLogin}
+            className="bg-white/90 p-6 sm:p-8 lg:p-10"
+          >
             <div className="mx-auto max-w-[440px]">
               <div className="mb-8 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 text-xl font-black tracking-tight text-blue-700 shadow-sm">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-sky-100 bg-gradient-to-br from-white to-sky-50 text-xl font-black tracking-tight text-blue-700 shadow-lg shadow-sky-100">
                   TJC
                 </div>
 
                 <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  <h2 className="text-2xl font-black tracking-tight text-slate-950">
                     เข้าสู่ระบบ
                   </h2>
 
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                  <span className="rounded-full border border-sky-100 bg-sky-50/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-700 shadow-sm shadow-sky-50">
                     Clean View
                   </span>
                 </div>
@@ -198,9 +223,8 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              
               {error && (
-                <div className="mb-5 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                <div className="mb-5 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm shadow-rose-50">
                   <div className="flex items-start gap-2">
                     <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
                     <span>{error}</span>
@@ -270,6 +294,12 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+
+              <div className="mt-6 rounded-3xl border border-sky-100 bg-slate-50/70 px-4 py-3 text-center">
+                <p className="text-xs font-semibold text-slate-500">
+                  Secure Camera Management System
+                </p>
+              </div>
             </div>
           </form>
         </section>
@@ -280,8 +310,8 @@ export default function LoginPage() {
 
 function FeatureItem({ icon, title, desc }) {
   return (
-    <div className="flex items-start gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
+    <div className="flex items-start gap-3 rounded-3xl border border-sky-100 bg-white/86 p-4 shadow-sm shadow-sky-100/70 transition hover:border-blue-200 hover:bg-white">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-blue-700 shadow-sm">
         <LoginIcon name={icon} />
       </div>
 

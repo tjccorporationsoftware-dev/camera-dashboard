@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "../../components/AppShell";
 
 const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 
 const CAMERA_GROUPS = [
   { path: "tapo01", name: "กล้องที่ 1" },
@@ -20,32 +19,41 @@ const CAMERA_GROUPS = [
 const DEFAULT_RETENTION_DAYS = 14;
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
-const pageContainer = "min-h-screen bg-slate-50 text-slate-900";
-const cardClass = "rounded-3xl border border-slate-200 bg-white shadow-sm";
+const pageContainer =
+  "min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.38),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.28),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_45%,#f8fafc_100%)] text-slate-900";
+
+const cardClass =
+  "rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
+
 const softCardClass =
-  "overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm";
+  "overflow-hidden rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
 
 const primaryButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 
 const outlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white/90 px-4 text-sm font-bold text-slate-700 shadow-sm shadow-sky-50 transition hover:border-blue-200 hover:bg-blue-50/70 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const dangerOutlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const inputClass =
-  "h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70";
+  "h-11 rounded-2xl border border-sky-100 bg-white/95 px-3 text-sm font-bold text-slate-800 shadow-sm shadow-sky-50 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function getApiBaseUrl() {
-  const url =
-    process.env.NEXT_PUBLIC_API_BASE_URL;
+function normalizeBaseUrl(url) {
+  return String(url || "").trim().replace(/\/+$/, "");
+}
 
-  return url.endsWith("/") ? url.slice(0, -1) : url;
+function getApiBaseUrl() {
+  return normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:4000/api"
+  );
 }
 
 function getAccessToken() {
@@ -287,7 +295,7 @@ function getItemName(item) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-50">
       {children}
     </div>
   );
@@ -295,15 +303,16 @@ function SectionLabel({ children }) {
 
 function Pill({ children, tone = "slate" }) {
   const baseStyle =
-    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold";
+    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm";
 
   const styles = {
-    slate: "border-slate-200 bg-slate-50 text-slate-700",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    red: "border-rose-200 bg-rose-50 text-rose-700",
-    amber: "border-amber-200 bg-amber-50 text-amber-800",
-    violet: "border-violet-200 bg-violet-50 text-violet-700",
+    slate: "border-slate-200 bg-white text-slate-700 shadow-slate-100",
+    blue: "border-sky-100 bg-sky-50/90 text-blue-700 shadow-sky-50",
+    green:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-emerald-50",
+    red: "border-rose-200 bg-rose-50 text-rose-700 shadow-rose-50",
+    amber: "border-amber-200 bg-amber-50 text-amber-800 shadow-amber-50",
+    violet: "border-violet-200 bg-violet-50 text-violet-700 shadow-violet-50",
   };
 
   return (
@@ -317,7 +326,7 @@ function DetailBox({ label, value, className = "" }) {
   return (
     <div
       className={cn(
-        "flex flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3",
+        "flex flex-col justify-center rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3",
         className
       )}
     >
@@ -415,8 +424,8 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
 
 function EmptyState({ title, desc }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 text-blue-700">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-sky-200 bg-white/80 px-6 py-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-sky-100 bg-sky-50 text-blue-700">
         <VideoIcon name="video" />
       </div>
 
@@ -549,21 +558,6 @@ export default function CameraRecordingsPage() {
     }
   }
 
-  async function logout() {
-    try {
-      await fetch(`${apiBaseUrl}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          ...getAuthHeaders(),
-        },
-      });
-    } finally {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
-      router.replace("/login");
-    }
-  }
-
   useEffect(() => {
     loadItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -652,60 +646,67 @@ export default function CameraRecordingsPage() {
 
   return (
     <AppShell>
-      <main
-        className={pageContainer}
-        style={{ fontFamily: APP_FONT_FAMILY }}
-      >
-        <div className="mx-auto max-w-[1720px] px-8 py-8">
-          <section className={cn(cardClass, "mb-5 px-5 py-5")}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-                    <VideoIcon name="video" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                        วิดีโอที่บันทึกไว้
-                      </h1>
-
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Clean View
-                      </span>
+      <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
+        <div className="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <section className={cn(cardClass, "mb-5 overflow-hidden")}>
+            <div className="border-b border-sky-100/80 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/50 px-5 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-white text-blue-700 shadow-sm shadow-sky-100">
+                      <VideoIcon name="video" />
                     </div>
 
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                      ศูนย์จัดการวิดีโอจากกล้องย้อนหลัง
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl font-bold tracking-tight text-slate-950">
+                          วิดีโอที่บันทึกไว้
+                        </h1>
+
+                        <span className="rounded-full border border-sky-100 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 shadow-sm">
+                          Clean View
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm font-medium text-slate-500">
+                        ศูนย์จัดการวิดีโอจากกล้องย้อนหลัง
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Pill tone="blue">Recorded Video</Pill>
+                    <Pill tone={items.length > 0 ? "green" : "slate"}>
+                      รวม {items.length} ไฟล์
+                    </Pill>
+                    {selected && (
+                      <Pill tone="violet">
+                        กำลังเลือก {selected.cameraName || selected.cameraPath}
+                      </Pill>
+                    )}
                   </div>
                 </div>
 
-               
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => loadItems(selected?.id)}
-                  disabled={loading || actionLoading}
-                  className={outlineButton}
-                >
-                  <span className={loading ? "animate-spin" : ""}>
-                    <VideoIcon name="reload" />
-                  </span>
-                  รีเฟรชข้อมูล
-                </button>
-
-                
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => loadItems(selected?.id)}
+                    disabled={loading || actionLoading}
+                    className={outlineButton}
+                  >
+                    <span className={loading ? "animate-spin" : ""}>
+                      <VideoIcon name="reload" />
+                    </span>
+                    รีเฟรชข้อมูล
+                  </button>
+                </div>
               </div>
             </div>
           </section>
 
           {loading && (
             <section className={cn(cardClass, "mb-5 p-12 text-center")}>
-              <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+              <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-sky-100 border-t-blue-600" />
 
               <p className="text-sm font-bold text-slate-700">
                 กำลังโหลดรายการวิดีโอ...
@@ -733,11 +734,11 @@ export default function CameraRecordingsPage() {
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_540px]">
               <section className="space-y-5">
                 <div className={softCardClass}>
-                  <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
+                  <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                     <div>
                       <SectionLabel>Video Player</SectionLabel>
 
-                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                         เครื่องเล่นวิดีโอ
                       </h2>
 
@@ -852,12 +853,12 @@ export default function CameraRecordingsPage() {
                 </div>
 
                 {selected ? (
-                  <div className={cn(cardClass, "overflow-hidden p-5")}>
-                    <div className="mb-4 flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center">
+                  <div className={cn(cardClass, "overflow-hidden")}>
+                    <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                       <div>
                         <SectionLabel>Video Details</SectionLabel>
 
-                        <h3 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                        <h3 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                           รายละเอียดวิดีโอ
                         </h3>
 
@@ -869,111 +870,112 @@ export default function CameraRecordingsPage() {
                       <SessionInfoBadge item={selected} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <DetailBox
-                        label="คำอธิบาย"
-                        value={getItemTitle(selected)}
-                      />
+                    <div className="p-5">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <DetailBox
+                          label="คำอธิบาย"
+                          value={getItemTitle(selected)}
+                        />
 
-                      <DetailBox
-                        label="กล้อง"
-                        value={selected.cameraName || selected.cameraPath || "-"}
-                      />
+                        <DetailBox
+                          label="กล้อง"
+                          value={
+                            selected.cameraName || selected.cameraPath || "-"
+                          }
+                        />
 
-                      <DetailBox
-                        label="ผู้บันทึก"
-                        value={selected.recorderName || "-"}
-                      />
+                        <DetailBox
+                          label="ผู้บันทึก"
+                          value={selected.recorderName || "-"}
+                        />
 
-                      <DetailBox
-                        label="เริ่มบันทึก"
-                        value={formatDateTime(selected.startTime)}
-                      />
+                        <DetailBox
+                          label="เริ่มบันทึก"
+                          value={formatDateTime(selected.startTime)}
+                        />
 
-                      <DetailBox
-                        label="หยุดบันทึก"
-                        value={formatDateTime(selected.endTime)}
-                      />
+                        <DetailBox
+                          label="หยุดบันทึก"
+                          value={formatDateTime(selected.endTime)}
+                        />
 
-                      <DetailBox
-                        label="ระยะเวลา"
-                        value={formatDuration(selected.duration)}
-                      />
+                        <DetailBox
+                          label="ระยะเวลา"
+                          value={formatDuration(selected.duration)}
+                        />
 
-                      <DetailBox
-                        label="ขนาดไฟล์"
-                        value={selected.sizeLabel || formatSize(selected.size)}
-                      />
+                        <DetailBox
+                          label="ขนาดไฟล์"
+                          value={selected.sizeLabel || formatSize(selected.size)}
+                        />
 
-                      <DetailBox
-                        label="เวลาคงเหลือ"
-                        value={formatRemainingTime(selected, retentionNow)}
-                      />
+                        <DetailBox
+                          label="เวลาคงเหลือ"
+                          value={formatRemainingTime(selected, retentionNow)}
+                        />
 
-                      <DetailBox
-                        label="ชื่อไฟล์"
-                        value={selected.fileName}
-                        className="sm:col-span-2"
-                      />
+                        <DetailBox
+                          label="ชื่อไฟล์"
+                          value={selected.fileName}
+                          className="sm:col-span-2"
+                        />
 
-                      <DetailBox
-                        label="จะถูกลบอัตโนมัติ"
-                        value={getAutoDeleteAtText(selected)}
-                        className="sm:col-span-2"
-                      />
-                    </div>
-
-                    <RetentionPanel
-                      item={selected}
-                      nowMs={retentionNow}
-                    />
-
-                    {selected.note && (
-                      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                        <p className="mb-1 text-xs font-bold text-slate-500">
-                          หมายเหตุ / เลขเอกสาร
-                        </p>
-
-                        <p className="whitespace-pre-wrap text-sm font-medium text-slate-900">
-                          {selected.note}
-                        </p>
+                        <DetailBox
+                          label="จะถูกลบอัตโนมัติ"
+                          value={getAutoDeleteAtText(selected)}
+                          className="sm:col-span-2"
+                        />
                       </div>
-                    )}
 
-                    <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-                      {downloadUrl && (
-                        <a
-                          href={downloadUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={primaryButton}
-                        >
-                          <VideoIcon name="download" />
-                          ดาวน์โหลดวิดีโอ
-                        </a>
+                      <RetentionPanel item={selected} nowMs={retentionNow} />
+
+                      {selected.note && (
+                        <div className="mt-3 rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3">
+                          <p className="mb-1 text-xs font-bold text-slate-500">
+                            หมายเหตุ / เลขเอกสาร
+                          </p>
+
+                          <p className="whitespace-pre-wrap text-sm font-medium text-slate-900">
+                            {selected.note}
+                          </p>
+                        </div>
                       )}
 
-                      {rawVideoUrl && (
-                        <a
-                          href={rawVideoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={outlineButton}
-                        >
-                          <VideoIcon name="external" />
-                          เปิดลิงก์วิดีโอตรง
-                        </a>
-                      )}
+                      <div className="mt-5 flex flex-wrap gap-2 border-t border-sky-100 pt-4">
+                        {downloadUrl && (
+                          <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={primaryButton}
+                          >
+                            <VideoIcon name="download" />
+                            ดาวน์โหลดวิดีโอ
+                          </a>
+                        )}
 
-                       <button
-                        type="button"
-                        onClick={deleteSelected}
-                        disabled={actionLoading || !selected}
-                        className={dangerOutlineButton}
-                      >
-                        <VideoIcon name="trash" />
-                        {actionLoading ? "กำลังลบ..." : "ลบไฟล์วิดีโอ"}
-                      </button> 
+                        {rawVideoUrl && (
+                          <a
+                            href={rawVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={outlineButton}
+                          >
+                            <VideoIcon name="external" />
+                            เปิดลิงก์วิดีโอตรง
+                          </a>
+                        )}
+
+                        {/* <button
+                          type="button"
+                          onClick={deleteSelected}
+                          disabled={actionLoading || !selected}
+                          className={dangerOutlineButton}
+                        >
+                          <VideoIcon name="trash" />
+                          {actionLoading ? "กำลังลบ..." : "ลบไฟล์วิดีโอ"}
+                        </button> */}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -984,12 +986,17 @@ export default function CameraRecordingsPage() {
                 )}
               </section>
 
-              <aside className={cn(softCardClass, "flex h-fit max-h-screen flex-col")}>
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
+              <aside
+                className={cn(
+                  softCardClass,
+                  "flex h-fit max-h-screen flex-col"
+                )}
+              >
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4">
                   <div>
                     <SectionLabel>Recorded List</SectionLabel>
 
-                    <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                    <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                       วิดีโอที่บันทึกไว้
                     </h2>
 
@@ -1003,7 +1010,7 @@ export default function CameraRecordingsPage() {
                   </Pill>
                 </div>
 
-                <div className="border-b border-slate-200 bg-slate-50 p-4">
+                <div className="border-b border-sky-100/80 bg-slate-50/60 p-4">
                   <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
                     เลือกกล้อง
                   </label>
@@ -1031,10 +1038,10 @@ export default function CameraRecordingsPage() {
                           type="button"
                           onClick={() => handleCameraPathChange(camera.path)}
                           className={cn(
-                            "rounded-2xl border px-3 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-blue-100/70",
+                            "rounded-2xl border px-3 py-3 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100/70",
                             active
-                              ? "border-blue-300 bg-blue-50 shadow-sm"
-                              : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50"
+                              ? "border-blue-300 bg-blue-50/80 shadow-blue-100"
+                              : "border-sky-100 bg-white/90 hover:border-blue-200 hover:bg-blue-50/50"
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -1068,8 +1075,8 @@ export default function CameraRecordingsPage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-50">
-                  <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex-1 overflow-y-auto p-4 [scrollbar-color:#bae6fd_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-sky-50/50">
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-3xl border border-sky-100 bg-white/80 px-4 py-3">
                     <div>
                       <p className="text-sm font-bold text-slate-900">
                         {selectedCameraGroup?.name || "กล้อง"}
@@ -1093,7 +1100,9 @@ export default function CameraRecordingsPage() {
 
                   {selectedCameraItems.length === 0 ? (
                     <EmptyState
-                      title={`ยังไม่มีไฟล์วิดีโอของ ${selectedCameraGroup?.name || "กล้องนี้"}`}
+                      title={`ยังไม่มีไฟล์วิดีโอของ ${
+                        selectedCameraGroup?.name || "กล้องนี้"
+                      }`}
                       desc="เมื่อมีการบันทึกวิดีโอ ไฟล์จะแสดงในรายการนี้"
                     />
                   ) : (
@@ -1175,8 +1184,8 @@ function RecordingItemCard({
       className={cn(
         "w-full rounded-3xl border p-4 text-left transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-100/70",
         active
-          ? "border-blue-300 bg-blue-50/80 shadow-sm"
-          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
+          ? "border-blue-300 bg-blue-50/80 shadow-sm shadow-blue-100"
+          : "border-sky-100 bg-white/90 hover:border-blue-200 hover:bg-sky-50/50 hover:shadow-sm"
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-3">
@@ -1197,7 +1206,7 @@ function RecordingItemCard({
         </div>
       </div>
 
-      <div className="my-3 h-px w-full bg-slate-200/70" />
+      <div className="my-3 h-px w-full bg-sky-100/80" />
 
       <div className="space-y-1.5 text-[11px] text-slate-600">
         <RowInfo label="ผู้บันทึก" value={item.recorderName || "-"} />
@@ -1239,7 +1248,7 @@ function RecordingItemCard({
       </div>
 
       {item.note && (
-        <div className="mt-3 border-t border-slate-100 pt-2">
+        <div className="mt-3 border-t border-sky-100 pt-2">
           <p className="mb-0.5 text-[11px] font-bold text-slate-400">
             หมายเหตุ:
           </p>
@@ -1302,17 +1311,6 @@ function VideoIcon({ name }) {
         <path d="M3 3v5h5" />
         <path d="M3 12a9 9 0 0 0 15.5 6.2L21 16" />
         <path d="M21 21v-5h-5" />
-      </svg>
-    );
-  }
-
-  if (name === "logout") {
-    return (
-      <svg {...common}>
-        <path d="M10 17 15 12 10 7" />
-        <path d="M15 12H3" />
-        <path d="M21 19V5a2 2 0 0 0-2-2h-5" />
-        <path d="M21 19a2 2 0 0 1-2 2h-5" />
       </svg>
     );
   }

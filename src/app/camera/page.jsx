@@ -5,26 +5,30 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
-const pageContainer = "min-h-screen bg-slate-50 text-slate-900";
-const cardClass = "rounded-3xl border border-slate-200 bg-white shadow-sm";
+const pageContainer =
+  "min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.38),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.28),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_45%,#f8fafc_100%)] text-slate-900";
+
+const cardClass =
+  "rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
+
 const softCardClass =
-  "rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden";
+  "overflow-hidden rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
 
 const primaryButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 
 const outlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white/90 px-4 text-sm font-bold text-slate-700 shadow-sm shadow-sky-50 transition hover:border-blue-200 hover:bg-blue-50/70 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const dangerButton =
-  "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm shadow-rose-100 transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 
 const inputClass =
-  "rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70";
+  "rounded-2xl border border-sky-100 bg-white/95 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm shadow-sky-50 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -293,7 +297,7 @@ function isCameraLockedByOtherUser(activeSessions, camera, currentUser) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-50">
       {children}
     </div>
   );
@@ -301,15 +305,15 @@ function SectionLabel({ children }) {
 
 function Pill({ children, tone = "slate" }) {
   const baseStyle =
-    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold";
+    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm";
 
   const styles = {
-    slate: "border-slate-200 bg-slate-50 text-slate-700",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    red: "border-rose-200 bg-rose-50 text-rose-700",
-    amber: "border-amber-200 bg-amber-50 text-amber-800",
-    violet: "border-violet-200 bg-violet-50 text-violet-700",
+    slate: "border-slate-200 bg-white text-slate-700 shadow-slate-100",
+    blue: "border-sky-100 bg-sky-50/90 text-blue-700 shadow-sky-50",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-emerald-50",
+    red: "border-rose-200 bg-rose-50 text-rose-700 shadow-rose-50",
+    amber: "border-amber-200 bg-amber-50 text-amber-800 shadow-amber-50",
+    violet: "border-violet-200 bg-violet-50 text-violet-700 shadow-violet-50",
   };
 
   return (
@@ -321,7 +325,7 @@ function Pill({ children, tone = "slate" }) {
 
 function DetailBox({ label, value }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3">
       <p className="text-xs font-bold text-slate-500">{label}</p>
       <p className="max-w-[62%] truncate text-right text-sm font-bold text-slate-900">
         {value || "-"}
@@ -368,12 +372,14 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
 function EmptyBox({ title, desc }) {
   return (
     <section className={cn(cardClass, "p-6 text-center")}>
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-blue-700">
         <CameraIcon name="camera" />
       </div>
 
       <div className="mt-3 text-sm font-bold text-slate-700">{title}</div>
-      {desc && <div className="mt-1 text-sm font-medium text-slate-400">{desc}</div>}
+      {desc && (
+        <div className="mt-1 text-sm font-medium text-slate-400">{desc}</div>
+      )}
     </section>
   );
 }
@@ -722,11 +728,7 @@ export default function CameraPage() {
     );
 
     setSelectedCameraId("");
-  }, [
-    selectedCamera,
-    selectedCameraIsLockedByOther,
-    selectedActiveSession,
-  ]);
+  }, [selectedCamera, selectedCameraIsLockedByOther, selectedActiveSession]);
 
   const selectedLiveUrl = useMemo(() => {
     return buildCameraStreamUrl(selectedCamera, reloadKey);
@@ -767,80 +769,82 @@ export default function CameraPage() {
   return (
     <AppShell>
       <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
-        <div className="mx-auto max-w-[1720px] px-8 py-8">
-          <section className="mb-5 rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-                    <CameraIcon name="camera" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                        Live Camera Console
-                      </h1>
-
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Clean View
-                      </span>
+        <div className="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <section className={cn(cardClass, "mb-5 overflow-hidden")}>
+            <div className="border-b border-sky-100/80 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/50 px-5 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-white text-blue-700 shadow-sm shadow-sky-100">
+                      <CameraIcon name="camera" />
                     </div>
 
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                      ระบบมอนิเตอร์กล้องและบันทึกวิดีโอ พร้อมควบคุมสิทธิ์การใช้งานแต่ละจอ
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl font-bold tracking-tight text-slate-950">
+                          Live Camera Console
+                        </h1>
+
+                        <span className="rounded-full border border-sky-100 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 shadow-sm">
+                          Clean View
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm font-medium text-slate-500">
+                        ระบบมอนิเตอร์กล้องและบันทึกวิดีโอ พร้อมควบคุมสิทธิ์การใช้งานแต่ละจอ
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Pill tone="blue">CCTV Recording</Pill>
+
+                    <Pill tone={activeCount > 0 ? "red" : "green"}>
+                      {activeCount > 0
+                        ? `กำลังอัด ${activeCount} กล้อง`
+                        : "สถานะ: พร้อมใช้งาน"}
+                    </Pill>
+
+                    {currentUserActiveSession && (
+                      <Pill tone="amber">
+                        คุณกำลังอัด{" "}
+                        {currentUserActiveSession.cameraName ||
+                          currentUserActiveSession.cameraPath}
+                      </Pill>
+                    )}
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Pill tone="blue">CCTV Recording</Pill>
-
-                  <Pill tone={activeCount > 0 ? "red" : "green"}>
-                    {activeCount > 0
-                      ? `กำลังอัด ${activeCount} กล้อง`
-                      : "สถานะ: พร้อมใช้งาน"}
-                  </Pill>
-
-                  {currentUserActiveSession && (
-                    <Pill tone="amber">
-                      คุณกำลังอัด{" "}
-                      {currentUserActiveSession.cameraName ||
-                        currentUserActiveSession.cameraPath}
-                    </Pill>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={() => setReloadKey((prev) => prev + 1)}
-                  disabled={loading}
-                  className={outlineButton}
-                >
-                  <CameraIcon name="reload" />
-                  รีโหลดกล้อง
-                </button>
-
-                <button
-                  type="button"
-                  onClick={loadAll}
-                  disabled={loading || Boolean(actionLoadingCamera)}
-                  className={primaryButton}
-                >
-                  <span className={loading ? "animate-spin" : ""}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={() => setReloadKey((prev) => prev + 1)}
+                    disabled={loading}
+                    className={outlineButton}
+                  >
                     <CameraIcon name="reload" />
-                  </span>
-                  รีเฟรชข้อมูล
-                </button>
+                    รีโหลดกล้อง
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={loadAll}
+                    disabled={loading || Boolean(actionLoadingCamera)}
+                    className={primaryButton}
+                  >
+                    <span className={loading ? "animate-spin" : ""}>
+                      <CameraIcon name="reload" />
+                    </span>
+                    รีเฟรชข้อมูล
+                  </button>
+                </div>
               </div>
             </div>
           </section>
 
           {loading && (
             <section className={cn(cardClass, "mb-5 p-12 text-center")}>
-              <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+              <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-sky-100 border-t-blue-600" />
               <p className="text-sm font-bold text-slate-700">
                 กำลังโหลดระบบกล้อง...
               </p>
@@ -880,11 +884,11 @@ export default function CameraPage() {
           {!loading && cameras.length > 0 && (
             <section className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
               <div className={softCardClass}>
-                <div className="flex flex-col items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
+                <div className="flex flex-col items-start justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                   <div>
                     <SectionLabel>Main Feed</SectionLabel>
 
-                    <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                    <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                       มอนิเตอร์กล้องหลัก
                     </h2>
 
@@ -943,8 +947,7 @@ export default function CameraPage() {
                         </div>
 
                         <div className="max-w-md px-6 text-sm text-slate-500">
-                          Main Feed จะยังไม่แสดงวิดีโอ จนกว่าจะเลือกกล้องจาก
-                          Camera Wall ด้านล่าง
+                          Main Feed จะยังไม่แสดงวิดีโอ จนกว่าจะเลือกกล้องจาก Camera Wall ด้านล่าง
                         </div>
                       </div>
                     )}
@@ -976,11 +979,11 @@ export default function CameraPage() {
 
               <aside className="h-fit">
                 <section className={softCardClass}>
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
+                  <div className="flex items-center justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4">
                     <div>
                       <SectionLabel>Controller</SectionLabel>
 
-                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                         แผงควบคุม
                       </h2>
                     </div>
@@ -1008,7 +1011,7 @@ export default function CameraPage() {
 
                   <div className="p-5">
                     {!selectedCamera ? (
-                      <div className="rounded-3xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
+                      <div className="rounded-3xl border border-sky-100 bg-sky-50/60 p-4 text-sm text-blue-900">
                         <div className="font-bold">
                           กรุณาเลือกจอจาก Camera Wall
                         </div>
@@ -1099,7 +1102,7 @@ export default function CameraPage() {
                           />
 
                           {selectedActiveSession.note && (
-                            <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div className="mt-2 rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3">
                               <p className="mb-1 text-xs font-bold text-slate-500">
                                 หมายเหตุ
                               </p>
@@ -1214,7 +1217,10 @@ export default function CameraPage() {
                             }
                             rows={4}
                             placeholder="ระบุรายละเอียดเพิ่มเติม..."
-                            className={cn(inputClass, "block w-full resize-none")}
+                            className={cn(
+                              inputClass,
+                              "block w-full resize-none"
+                            )}
                           />
                         </div>
 
@@ -1236,11 +1242,11 @@ export default function CameraPage() {
 
           {!loading && cameras.length > 0 && (
             <section className={softCardClass}>
-              <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
+              <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                 <div>
                   <SectionLabel>Camera Wall</SectionLabel>
 
-                  <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                  <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                     Camera Monitoring Wall
                   </h2>
 
@@ -1249,8 +1255,8 @@ export default function CameraPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-500">
+                <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5">
+                  <span className="text-xs font-bold text-emerald-700">
                     Online Monitor
                   </span>
 
@@ -1258,7 +1264,7 @@ export default function CameraPage() {
                 </div>
               </div>
 
-              <div className="grid w-full grid-cols-1 gap-3 bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid w-full grid-cols-1 gap-3 bg-slate-50/70 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 {cameras.slice(0, 6).map((camera) => {
                   const activeSession = getActiveSessionForCamera(
                     activeSessions,
@@ -1296,7 +1302,7 @@ export default function CameraPage() {
                           : "border-slate-200",
                         lockedByOther
                           ? "cursor-not-allowed"
-                          : "cursor-pointer hover:border-blue-200"
+                          : "cursor-pointer hover:border-blue-200 hover:shadow-md"
                       )}
                     >
                       {liveUrl ? (

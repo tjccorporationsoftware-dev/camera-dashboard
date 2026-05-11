@@ -19,11 +19,14 @@ import {
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL 
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:4000/api"
 ).replace(/\/$/, "");
 
 const ALL_COMPANIES = "__ALL_COMPANIES__";
 const PAGE_SIZE = 60;
+const IMPORT_MODE = "REPLACE_COMPANY_STOCK";
+const ACCESS_TOKEN_KEY = "camera_access_token";
 
 const CATEGORY_MAPPING = {
   AG: "เกษตร",
@@ -46,40 +49,6 @@ const CATEGORY_MAPPING = {
   TO: "เครื่องมือช่าง",
 };
 
-const CHART_COLORS = [
-  "#3b82f6",
-  "#14b8a6",
-  "#8b5cf6",
-  "#f59e0b",
-  "#22c55e",
-  "#06b6d4",
-  "#64748b",
-  "#ec4899",
-  "#ef4444",
-  "#6366f1",
-  "#84cc16",
-  "#f97316",
-];
-
-const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif';
-
-const CHART_TICK_STYLE = {
-  fill: "#64748b",
-  fontWeight: 600,
-  fontFamily: APP_FONT_FAMILY,
-  fontSize: 11,
-};
-
-const IMPORT_MODE = "REPLACE_COMPANY_STOCK";
-
-const METRIC_OPTIONS = [
-  { key: "count", label: "จำนวนรายการ", shortLabel: "รายการ" },
-  { key: "totalQty", label: "ยอดคงเหลือ", shortLabel: "คงเหลือ" },
-];
-
-const ACCESS_TOKEN_KEY = "camera_access_token";
-
 const COMPANY_LOGOS = {
   ART: "/company-logos/logo_art.jpg",
   ASC: "/company-logos/ascent.png",
@@ -87,67 +56,57 @@ const COMPANY_LOGOS = {
   TJC: "/company-logos/tjc-logo.jpg",
 };
 
-function getCompanyLogoUrl(companyOrCode) {
-  const rawCode =
-    typeof companyOrCode === "string"
-      ? companyOrCode
-      : companyOrCode?.code || "";
+const CHART_COLORS = [
+  "#2563eb",
+  "#0891b2",
+  "#7c3aed",
+  "#10b981",
+  "#f59e0b",
+  "#06b6d4",
+  "#6366f1",
+  "#ec4899",
+  "#ef4444",
+  "#14b8a6",
+  "#84cc16",
+  "#f97316",
+];
 
-  const code = String(rawCode || "").trim().toUpperCase();
+const METRIC_OPTIONS = [
+  { key: "count", label: "จำนวนรายการ", shortLabel: "รายการ" },
+  { key: "totalQty", label: "ยอดคงเหลือ", shortLabel: "คงเหลือ" },
+];
 
-  if (!code || code === ALL_COMPANIES) return "";
+const APP_FONT_FAMILY =
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif';
 
-  if (typeof companyOrCode === "object") {
-    return (
-      companyOrCode.logoUrl ||
-      companyOrCode.logo ||
-      companyOrCode.logoPath ||
-      COMPANY_LOGOS[code] ||
-      `/company-logos/${code.toLowerCase()}.png`
-    );
-  }
+const CHART_TICK_STYLE = {
+  fill: "#64748b",
+  fontWeight: 700,
+  fontFamily: APP_FONT_FAMILY,
+  fontSize: 11,
+};
 
-  return COMPANY_LOGOS[code] || `/company-logos/${code.toLowerCase()}.png`;
-}
+const pageContainer =
+  "min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.38),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.32),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_44%,#f8fafc_100%)] text-slate-900";
 
-function getCompanyInitials(code, name) {
-  const safeCode = String(code || "").trim().toUpperCase();
+const cardClass =
+  "rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
 
-  if (safeCode === ALL_COMPANIES) return "ALL";
-  if (safeCode) return safeCode.slice(0, 3);
+const chartCard =
+  "overflow-hidden rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
 
-  return String(name || "CO")
-    .trim()
-    .split(/\s+/)
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
-}
+const primaryButton =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 text-sm font-bold text-white shadow-sm shadow-blue-200/70 transition hover:from-blue-700 hover:to-sky-600 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300";
+
+const ghostButton =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm shadow-sky-100/30 transition hover:border-blue-200 hover:bg-sky-50/70 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+
+const inputClass =
+  "h-10 rounded-2xl border border-sky-100 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm shadow-sky-100/25 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-sky-100/70";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
-
-const pageContainer = "min-h-screen bg-slate-50 text-slate-900";
-
-const cardClass =
-  "rounded-3xl border border-slate-200 bg-white shadow-sm";
-
-const chartCard =
-  "overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm";
-
-const primaryButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300";
-
-const outlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
-
-const ghostButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
-
-const inputClass =
-  "h-10 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString("th-TH", {
@@ -160,6 +119,23 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString("th-TH", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
+  });
+}
+
+function formatThaiDateTime(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("th-TH", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -231,6 +207,44 @@ function getProductCategoryCode(product) {
 function getProductCategoryName(product) {
   const code = getProductCategoryCode(product);
   return product?.category || CATEGORY_MAPPING[code] || "ไม่ระบุหมวด";
+}
+
+function getCompanyLogoUrl(companyOrCode) {
+  const rawCode =
+    typeof companyOrCode === "string"
+      ? companyOrCode
+      : companyOrCode?.code || "";
+
+  const code = String(rawCode || "").trim().toUpperCase();
+
+  if (!code || code === ALL_COMPANIES) return "";
+
+  if (typeof companyOrCode === "object") {
+    return (
+      companyOrCode.logoUrl ||
+      companyOrCode.logo ||
+      companyOrCode.logoPath ||
+      COMPANY_LOGOS[code] ||
+      `/company-logos/${code.toLowerCase()}.png`
+    );
+  }
+
+  return COMPANY_LOGOS[code] || `/company-logos/${code.toLowerCase()}.png`;
+}
+
+function getCompanyInitials(code, name) {
+  const safeCode = String(code || "").trim().toUpperCase();
+
+  if (safeCode === ALL_COMPANIES) return "ALL";
+  if (safeCode) return safeCode.slice(0, 3);
+
+  return String(name || "CO")
+    .trim()
+    .split(/\s+/)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
 }
 
 function buildSummary(rows = []) {
@@ -359,7 +373,10 @@ async function apiFetch(path, options = {}) {
 
   if (!res.ok) {
     const message =
-      data?.message || data?.error || `เกิดข้อผิดพลาดจาก API สถานะ ${res.status}`;
+      data?.message ||
+      data?.error ||
+      `เกิดข้อผิดพลาดจาก API สถานะ ${res.status}`;
+
     const error = new Error(message);
     error.status = res.status;
     error.data = data;
@@ -382,7 +399,7 @@ function DashboardTooltip({ active, payload, label }) {
   return (
     <div
       style={{ fontFamily: APP_FONT_FAMILY }}
-      className="min-w-[250px] rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-lg shadow-slate-200/70"
+      className="min-w-[230px] rounded-2xl border border-sky-100 bg-white/95 p-4 text-sm shadow-xl shadow-sky-100/45 backdrop-blur"
     >
       <div className="mb-3 border-b border-slate-100 pb-2">
         <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-600">
@@ -479,11 +496,11 @@ export default function InventoryDashboardPage() {
 
         return {
           ...row,
-           companyCode: company.code,
-  companyName: company.name,
-  companyLogoUrl: getCompanyLogoUrl(company),
-  categoryCode,
-  categoryName,
+          companyCode: company.code,
+          companyName: company.name,
+          companyLogoUrl: getCompanyLogoUrl(company),
+          categoryCode,
+          categoryName,
         };
       });
     });
@@ -629,9 +646,7 @@ export default function InventoryDashboardPage() {
     }));
   }, [donutMetric, selectedViewCategorySummary]);
 
-  const donutChartData = useMemo(() => {
-    return donutData.slice(0, 8);
-  }, [donutData]);
+  const donutChartData = useMemo(() => donutData.slice(0, 8), [donutData]);
 
   const donutTotal = useMemo(() => {
     return donutData.reduce(
@@ -668,6 +683,52 @@ export default function InventoryDashboardPage() {
 
     return companyData[selectedCompanyCode]?.batches || [];
   }, [companies, companyData, isAllCompaniesSelected, selectedCompanyCode]);
+
+  const latestGlobalBatch = useMemo(() => {
+    return (
+      companies
+        .flatMap((company) => {
+          const latestBatch = companyData[company.code]?.latestBatch;
+
+          if (!latestBatch) return [];
+
+          return [
+            {
+              ...latestBatch,
+              companyCode: company.code,
+              companyName: company.name,
+            },
+          ];
+        })
+        .sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        )[0] || null
+    );
+  }, [companies, companyData]);
+
+  const latestUploadBatch = useMemo(() => {
+    if (isAllCompaniesSelected) return latestGlobalBatch;
+
+    const latestBatch = companyData[selectedCompanyCode]?.latestBatch || null;
+
+    if (!latestBatch) return null;
+
+    return {
+      ...latestBatch,
+      companyCode: selectedCompanyCode,
+      companyName: selectedCompany?.name || "",
+    };
+  }, [
+    companyData,
+    isAllCompaniesSelected,
+    latestGlobalBatch,
+    selectedCompany,
+    selectedCompanyCode,
+  ]);
+
+  const latestUploadText = latestUploadBatch?.createdAt
+    ? formatThaiDateTime(latestUploadBatch.createdAt)
+    : "ยังไม่มีการอัปโหลด";
 
   const importQualityData = useMemo(() => {
     return [...selectedBatches]
@@ -907,47 +968,7 @@ export default function InventoryDashboardPage() {
   return (
     <AppShell>
       <div className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex min-h-[76px] max-w-[1720px] items-center justify-between px-8">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-                <svg
-                  width="21"
-                  height="21"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="4" width="18" height="13" rx="2" />
-                  <path d="M8 21h8" />
-                  <path d="M12 17v4" />
-                  <path d="M7 12l3-3 3 2 4-5" />
-                </svg>
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                    Inventory Management Dashboard
-                  </h1>
-
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                    Clean View
-                  </span>
-                </div>
-
-                <p className="mt-1 text-xs font-medium text-slate-500">
-                  ภาพรวมสินค้า คลังคงเหลือ หมวดหมู่ และคุณภาพการนำเข้าข้อมูล
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-430 px-8 py-8">
+        <main className="relative mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
           {(error || success) && (
             <div className="mb-5 space-y-2">
               {error && (
@@ -971,31 +992,39 @@ export default function InventoryDashboardPage() {
           )}
 
           <section className={cn(cardClass, "mb-5 overflow-hidden")}>
-            <div className="border-b border-slate-200 bg-white px-5 py-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
+            <div className="border-b border-sky-100/70 bg-gradient-to-r from-sky-50/45 via-white to-slate-50 px-4 py-5 sm:px-5 lg:px-6">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="min-w-0">
                   <SectionLabel>Company Overview</SectionLabel>
-                  <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
-                    ภาพรวมบริษัทและคลังสินค้า
-                  </h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    เลือกดูภาพรวมทุกบริษัท หรือเจาะจงรายบริษัทเพื่อวิเคราะห์ข้อมูล
-                  </p>
-                </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">
-                  {selectedCompany?.name || "ภาพรวมทุกบริษัท"}
+                  <div className="mt-3 flex flex-col gap-2 lg:flex-row lg:items-end lg:gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold tracking-tight text-slate-950">
+                        ภาพรวมบริษัทและคลังสินค้า
+                      </h2>
+
+                      <p className="mt-1 text-sm font-medium text-slate-500">
+                        เลือกดูภาพรวมทุกบริษัท หรือเจาะจงรายบริษัทเพื่อวิเคราะห์ข้อมูล
+                      </p>
+
+                      
+                    </div>
+
+                    <div className="w-fit rounded-full border border-sky-100 bg-sky-50/70 px-3 py-1 text-xs font-bold text-blue-700">
+                      {selectedCompany?.name || "ภาพรวมทุกบริษัท"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-5">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-5">
+            <div className="bg-gradient-to-b from-sky-50/30 via-white/85 to-slate-50/60 p-4 sm:p-5 lg:p-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {loadingCompanies ? (
                   Array.from({ length: 6 }).map((_, index) => (
                     <div
                       key={index}
-                      className="h-42 animate-pulse rounded-3xl border border-slate-200 bg-slate-100"
+                      className="h-[168px] animate-pulse rounded-3xl border border-sky-100 bg-white/80 shadow-sm shadow-sky-100/35"
                     />
                   ))
                 ) : (
@@ -1007,6 +1036,7 @@ export default function InventoryDashboardPage() {
                           name: "รวมทุกบริษัท",
                         },
                         summary: globalSummary,
+                        latestBatch: latestGlobalBatch,
                       }}
                       active={selectedCompanyCode === ALL_COMPANIES}
                       onClick={() => handleCompanyChange(ALL_COMPANIES)}
@@ -1028,7 +1058,7 @@ export default function InventoryDashboardPage() {
             </div>
           </section>
 
-          <section className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <section className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="รายการที่แสดงผล"
               value={formatNumber(visibleSummary.totalRows)}
@@ -1062,7 +1092,7 @@ export default function InventoryDashboardPage() {
             />
           </section>
 
-          <section className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
+          <section className="mb-5 grid grid-cols-1 gap-5 2xl:grid-cols-[1.55fr_1fr]">
             <div className={chartCard}>
               <ChartHeader
                 eyebrow="Comparative Analysis"
@@ -1075,15 +1105,15 @@ export default function InventoryDashboardPage() {
                   getMetricUnit(mainMetric) || "-"
                 }`}
                 right={
-                  <div className="flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+                  <div className="flex w-full rounded-2xl border border-sky-100 bg-sky-50/45 p-1 shadow-inner shadow-sky-100/35 sm:w-auto">
                     {METRIC_OPTIONS.map((opt) => (
                       <button
                         key={opt.key}
                         className={cn(
-                          "rounded-xl px-3 py-1.5 text-xs font-bold transition",
+                          "flex-1 rounded-xl px-3 py-1.5 text-xs font-bold transition sm:flex-none",
                           mainMetric === opt.key
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-500 hover:text-blue-700"
+                            ? "bg-white text-blue-700 shadow-sm shadow-sky-100"
+                            : "text-slate-500 hover:bg-white/60 hover:text-blue-700"
                         )}
                         onClick={() => setMainMetric(opt.key)}
                         type="button"
@@ -1095,7 +1125,7 @@ export default function InventoryDashboardPage() {
                 }
               />
 
-              <div className="h-[380px] px-4 pb-5">
+              <ChartScrollBox height="h-[360px] sm:h-[400px]">
                 {mainChartData.length === 0 ? (
                   <EmptyChart label="ไม่มีข้อมูล" />
                 ) : (
@@ -1103,7 +1133,7 @@ export default function InventoryDashboardPage() {
                     <BarChart
                       data={mainChartData}
                       layout="vertical"
-                      margin={{ top: 8, right: 100, left: 18, bottom: 8 }}
+                      margin={{ top: 8, right: 92, left: 10, bottom: 8 }}
                     >
                       <CartesianGrid
                         strokeDasharray="3 6"
@@ -1120,7 +1150,7 @@ export default function InventoryDashboardPage() {
                       <YAxis
                         type="category"
                         dataKey="label"
-                        width={92}
+                        width={82}
                         tickLine={false}
                         axisLine={false}
                         tick={{
@@ -1137,7 +1167,7 @@ export default function InventoryDashboardPage() {
                         dataKey={mainMetric}
                         name={selectedMetricOption?.label || "จำนวน"}
                         radius={[0, 12, 12, 0]}
-                        barSize={17}
+                        barSize={18}
                       >
                         <LabelList
                           dataKey={mainMetric}
@@ -1161,7 +1191,7 @@ export default function InventoryDashboardPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </ChartScrollBox>
             </div>
 
             <div className={chartCard}>
@@ -1173,8 +1203,8 @@ export default function InventoryDashboardPage() {
                 }`}
               />
 
-              <div className="grid gap-5 px-4 pb-5 pt-4 2xl:grid-cols-[220px_1fr]">
-                <div className="relative mx-auto h-[220px] w-[220px] rounded-full bg-white p-2 ring-1 ring-slate-100">
+              <div className="grid grid-cols-1 gap-5 px-4 pb-5 pt-4 lg:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[250px_minmax(0,1fr)]">
+                <div className="relative mx-auto h-[230px] w-[230px] self-center rounded-full bg-gradient-to-br from-white to-sky-50/45 p-2 shadow-inner ring-1 ring-sky-100 lg:h-[250px] lg:w-[250px] 2xl:h-[230px] 2xl:w-[230px]">
                   {donutChartData.length === 0 ? (
                     <EmptyChart label="ไม่มีข้อมูล" />
                   ) : (
@@ -1184,12 +1214,12 @@ export default function InventoryDashboardPage() {
                           data={donutChartData}
                           dataKey="chartValue"
                           nameKey="code"
-                          innerRadius={72}
-                          outerRadius={96}
+                          innerRadius={74}
+                          outerRadius={98}
                           stroke="#ffffff"
                           strokeWidth={4}
                           paddingAngle={3}
-                          cornerRadius={7}
+                          cornerRadius={8}
                         >
                           {donutChartData.map((entry, index) => (
                             <Cell
@@ -1210,7 +1240,7 @@ export default function InventoryDashboardPage() {
                         {donutMetricName}
                       </span>
 
-                      <span className="mt-1 text-2xl font-bold text-slate-900">
+                      <span className="mt-1 text-2xl font-bold text-slate-950">
                         {formatAxisNumber(donutTotal)}
                       </span>
 
@@ -1226,7 +1256,7 @@ export default function InventoryDashboardPage() {
             </div>
           </section>
 
-          <section className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <section className="mb-5 grid grid-cols-1 gap-5 2xl:grid-cols-2">
             <div className={chartCard}>
               <ChartHeader
                 eyebrow="Top Inventory"
@@ -1240,7 +1270,7 @@ export default function InventoryDashboardPage() {
                 }`}
               />
 
-              <div className="h-[380px] px-4 pb-5">
+              <ChartScrollBox height="h-[360px] sm:h-[400px]">
                 {topItemData.length === 0 ? (
                   <EmptyChart label="ไม่มีข้อมูลสินค้า" />
                 ) : (
@@ -1248,7 +1278,7 @@ export default function InventoryDashboardPage() {
                     <BarChart
                       data={topItemData}
                       layout="vertical"
-                      margin={{ top: 8, right: 108, left: 18, bottom: 8 }}
+                      margin={{ top: 8, right: 104, left: 8, bottom: 8 }}
                     >
                       <CartesianGrid
                         strokeDasharray="3 6"
@@ -1265,7 +1295,7 @@ export default function InventoryDashboardPage() {
                       <YAxis
                         type="category"
                         dataKey="label"
-                        width={112}
+                        width={110}
                         tickLine={false}
                         axisLine={false}
                         tick={{
@@ -1282,7 +1312,7 @@ export default function InventoryDashboardPage() {
                         dataKey={topItemMetric}
                         name={topItemMetricName}
                         radius={[0, 12, 12, 0]}
-                        barSize={17}
+                        barSize={18}
                       >
                         <LabelList
                           dataKey={topItemMetric}
@@ -1306,7 +1336,7 @@ export default function InventoryDashboardPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </ChartScrollBox>
             </div>
 
             <div className={chartCard}>
@@ -1316,7 +1346,7 @@ export default function InventoryDashboardPage() {
                 desc="เปรียบเทียบจำนวนแถวที่สำเร็จและผิดพลาด"
               />
 
-              <div className="h-[380px] px-4 pb-5">
+              <ChartScrollBox height="h-[360px] sm:h-[400px]">
                 {importQualityData.length === 0 ? (
                   <EmptyChart label="ไม่มีประวัติ" />
                 ) : (
@@ -1362,30 +1392,29 @@ export default function InventoryDashboardPage() {
                         dataKey="importedRows"
                         name="สำเร็จ"
                         stackId="import"
-                        fill="#22c55e"
+                        fill="#16a34a"
                         barSize={30}
-                        radius={[0, 0, 0, 0]}
                       />
                       <Bar
                         dataKey="errorRows"
                         name="ผิดพลาด"
                         stackId="import"
-                        fill="#ef4444"
+                        fill="#dc2626"
                         radius={[10, 10, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </ChartScrollBox>
             </div>
           </section>
 
           <section className={cn(cardClass, "overflow-hidden")}>
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+            <div className="flex flex-col gap-4 border-b border-sky-100/70 bg-gradient-to-r from-white via-sky-50/35 to-slate-50 px-4 py-4 sm:px-5 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <SectionLabel>Product Database</SectionLabel>
 
-                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                   ฐานข้อมูลสินค้า
                 </h2>
 
@@ -1402,12 +1431,12 @@ export default function InventoryDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(220px,260px)_minmax(220px,320px)_auto]">
                 <div className="relative">
                   <select
                     value={selectedCategoryCode}
                     onChange={(e) => setSelectedCategoryCode(e.target.value)}
-                    className={cn(inputClass, "w-[240px] appearance-none pr-9")}
+                    className={cn(inputClass, "w-full appearance-none pr-9")}
                   >
                     <option value="ALL">ทุกหมวดหมู่</option>
 
@@ -1429,7 +1458,7 @@ export default function InventoryDashboardPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="ค้นหารหัส, ชื่อ, รุ่น..."
-                  className={cn(inputClass, "w-[280px]")}
+                  className={cn(inputClass, "w-full")}
                 />
 
                 <button
@@ -1483,7 +1512,7 @@ export default function InventoryDashboardPage() {
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+    <div className="inline-flex rounded-full border border-blue-200/70 bg-sky-50/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-100/35">
       {children}
     </div>
   );
@@ -1491,13 +1520,13 @@ function SectionLabel({ children }) {
 
 function ChartHeader({ eyebrow, title, desc, right }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
+    <div className="flex flex-col gap-3 border-b border-sky-100/70 bg-gradient-to-r from-sky-50/45 via-white to-slate-50 px-4 py-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
       <div>
-        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">
+        <div className="inline-flex rounded-full border border-sky-100 bg-sky-50/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
           {eyebrow}
         </div>
 
-        <h3 className="mt-1.5 text-base font-bold tracking-tight text-slate-900">
+        <h3 className="mt-2 text-base font-bold tracking-tight text-slate-950">
           {title}
         </h3>
 
@@ -1509,13 +1538,21 @@ function ChartHeader({ eyebrow, title, desc, right }) {
   );
 }
 
+function ChartScrollBox({ children, height = "h-[380px]" }) {
+  return (
+    <div className="overflow-x-auto px-3 pb-5 pt-4 sm:px-4">
+      <div className={cn("min-w-[620px]", height)}>{children}</div>
+    </div>
+  );
+}
+
 function AlertBox({ type, title, message, onClose }) {
   const isError = type === "error";
 
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 rounded-3xl border px-4 py-3 text-sm",
+        "flex items-start justify-between gap-3 rounded-3xl border px-4 py-3 text-sm shadow-sm",
         isError
           ? "border-rose-200 bg-rose-50 text-rose-700"
           : "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -1551,7 +1588,10 @@ function CompanyLogo({
   const companyCode = company?.code || code || "";
   const companyName = company?.name || name || "";
   const resolvedLogoUrl =
-    logoUrl || company?.logoUrl || company?.logo || getCompanyLogoUrl(company || companyCode);
+    logoUrl ||
+    company?.logoUrl ||
+    company?.logo ||
+    getCompanyLogoUrl(company || companyCode);
 
   const initials = getCompanyInitials(companyCode, companyName);
 
@@ -1565,7 +1605,7 @@ function CompanyLogo({
     <div
       className={cn(
         "flex shrink-0 items-center justify-center overflow-hidden border bg-white shadow-sm",
-        active ? "border-blue-200 ring-4 ring-blue-100/70" : "border-slate-200",
+        active ? "border-blue-200 ring-4 ring-sky-100/45" : "border-slate-200",
         sizeMap[size] || sizeMap.md,
         className
       )}
@@ -1609,38 +1649,30 @@ function CompanyCard({ item, active, onClick, onUpload }) {
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "relative min-h-[168px] cursor-pointer overflow-hidden rounded-3xl border bg-white p-4 outline-none transition focus:ring-4 focus:ring-blue-100/70",
+        "group relative min-h-[168px] cursor-pointer overflow-hidden rounded-3xl border p-4 outline-none transition duration-200 focus:ring-4 focus:ring-sky-100/60",
+        "before:absolute before:-right-12 before:-top-12 before:h-28 before:w-28 before:rounded-full before:bg-sky-100/45 before:blur-2xl",
         active
-          ? "border-blue-300 bg-blue-50/40"
-          : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"
+          ? "border-blue-300 bg-gradient-to-br from-sky-50/85 via-white to-blue-50/55 shadow-md shadow-sky-100/45 ring-4 ring-sky-100/45"
+          : "border-sky-100/80 bg-gradient-to-br from-white via-sky-50/35 to-white shadow-sm shadow-sky-100/30 hover:-translate-y-0.5 hover:border-blue-200 hover:from-sky-50/55 hover:via-white hover:to-blue-50/35 hover:shadow-md hover:shadow-sky-100/40"
       )}
     >
-      <div className="relative flex items-start justify-between gap-3">
+      <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <CompanyLogo
-            company={item.company}
-            size="lg"
-            active={active}
-          />
+          <CompanyLogo company={item.company} size="lg" active={active} />
 
           <div className="min-w-0">
             <span
               className={cn(
-                "inline-flex h-7 items-center rounded-full border px-2.5 text-[10px] font-bold uppercase tracking-wide",
+                "inline-flex h-7 items-center rounded-full border px-2.5 text-[10px] font-bold uppercase tracking-wide shadow-sm",
                 active
-                  ? "border-blue-200 bg-white text-blue-700"
-                  : "border-slate-200 bg-slate-50 text-slate-500"
+                  ? "border-blue-100 bg-white text-blue-700 shadow-sky-100/70"
+                  : "border-sky-100 bg-sky-50/60 text-blue-600 shadow-sky-50"
               )}
             >
               {isAll ? "ALL" : item.company.code}
             </span>
 
-            <div
-              className={cn(
-                "mt-2 line-clamp-2 text-sm font-bold leading-relaxed",
-                active ? "text-slate-900" : "text-slate-800"
-              )}
-            >
+            <div className="mt-2 line-clamp-2 text-sm font-bold leading-relaxed text-slate-800">
               {item.company.name}
             </div>
           </div>
@@ -1649,7 +1681,7 @@ function CompanyCard({ item, active, onClick, onUpload }) {
         {onUpload && (
           <button
             type="button"
-            className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-400 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-white text-xs font-bold text-blue-500 shadow-sm shadow-sky-100/60 transition hover:border-blue-200 hover:bg-sky-50 hover:text-blue-700"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1662,7 +1694,39 @@ function CompanyCard({ item, active, onClick, onUpload }) {
         )}
       </div>
 
-      <div className="relative mt-4 grid grid-cols-3 gap-2 border-t border-slate-200 pt-3">
+      <div
+        className={cn(
+          "relative z-10 mt-3 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-sm",
+          active
+            ? "border-blue-100 bg-blue-50/65 text-blue-700 shadow-sky-100/50"
+            : "border-sky-100 bg-sky-50/45 text-slate-600 shadow-sky-50/60"
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              item.latestBatch?.createdAt ? "bg-emerald-500" : "bg-slate-300"
+            )}
+          />
+          <span>อัปโหลดล่าสุด</span>
+        </div>
+
+        <div className="mt-1 truncate text-xs font-black tabular-nums text-slate-900">
+          {item.latestBatch?.createdAt
+            ? formatThaiDateTime(item.latestBatch.createdAt)
+            : "ยังไม่มีข้อมูล"}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "relative z-10 mt-4 grid grid-cols-3 gap-2 rounded-2xl border px-3 py-3",
+          active
+            ? "border-blue-100 bg-white/70"
+            : "border-sky-100/70 bg-white/55"
+        )}
+      >
         <CompanyStat
           label="QTY"
           value={formatNumber(item.summary.totalQty)}
@@ -1697,7 +1761,7 @@ function CompanyStat({ label, value, active }) {
         {label}
       </div>
 
-      <div className="mt-1 text-xs font-bold tabular-nums text-slate-900">
+      <div className="mt-1 text-xs font-bold tabular-nums text-slate-950">
         {value}
       </div>
     </div>
@@ -1707,20 +1771,43 @@ function CompanyStat({ label, value, active }) {
 function MetricCard({ label, value, desc, tone, icon }) {
   const toneMap = {
     blue: {
-      border: "border-blue-100",
-      icon: "bg-blue-50 text-blue-700 border-blue-100",
+      card:
+        "border-sky-100 bg-gradient-to-br from-sky-50/70 via-white to-white",
+      icon:
+        "border-sky-200 bg-gradient-to-br from-blue-500 to-sky-500 text-white shadow-sky-100",
+      glow: "bg-sky-100/70",
+      value: "text-slate-950",
+      label: "text-sky-600",
     },
+
     emerald: {
-      border: "border-emerald-100",
-      icon: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      card:
+        "border-emerald-100 bg-gradient-to-br from-emerald-50/55 via-white to-white",
+      icon:
+        "border-emerald-200 bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-emerald-100",
+      glow: "bg-emerald-100/65",
+      value: "text-slate-950",
+      label: "text-emerald-600",
     },
+
     violet: {
-      border: "border-violet-100",
-      icon: "bg-violet-50 text-violet-700 border-violet-100",
+      card:
+        "border-violet-100 bg-gradient-to-br from-violet-50/55 via-white to-white",
+      icon:
+        "border-violet-200 bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-violet-100",
+      glow: "bg-violet-100/65",
+      value: "text-slate-950",
+      label: "text-violet-600",
     },
+
     slate: {
-      border: "border-slate-200",
-      icon: "bg-slate-50 text-slate-700 border-slate-100",
+      card:
+        "border-slate-200 bg-gradient-to-br from-slate-50/80 via-white to-sky-50/35",
+      icon:
+        "border-slate-200 bg-gradient-to-br from-slate-600 to-slate-700 text-white shadow-slate-100",
+      glow: "bg-slate-100/80",
+      value: "text-slate-950",
+      label: "text-slate-500",
     },
   };
 
@@ -1729,17 +1816,34 @@ function MetricCard({ label, value, desc, tone, icon }) {
   return (
     <div
       className={cn(
-        "rounded-3xl border bg-white p-5 shadow-sm",
-        selected.border
+        "group relative overflow-hidden rounded-[2rem] border p-5 shadow-[0_12px_34px_rgba(15,23,42,0.045)] ring-1 ring-white/80 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.06)]",
+        selected.card
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl transition group-hover:scale-110",
+          selected.glow
+        )}
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-bold uppercase tracking-wide text-slate-400">
+          <div
+            className={cn(
+              "text-xs font-bold uppercase tracking-wide",
+              selected.label
+            )}
+          >
             {label}
           </div>
 
-          <div className="mt-3 text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
+          <div
+            className={cn(
+              "mt-3 text-3xl font-black tracking-tight tabular-nums",
+              selected.value
+            )}
+          >
             {value}
           </div>
 
@@ -1750,7 +1854,7 @@ function MetricCard({ label, value, desc, tone, icon }) {
 
         <div
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-lg",
             selected.icon
           )}
         >
@@ -1824,7 +1928,7 @@ function MetricIcon({ name }) {
 function DonutLegend({ data, metricKey }) {
   if (!data.length) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white">
+      <div className="flex min-h-[260px] items-center justify-center rounded-3xl border border-dashed border-blue-200 bg-sky-50/30">
         <span className="text-sm font-bold text-slate-400">
           ไม่มีข้อมูลหมวดหมู่
         </span>
@@ -1852,7 +1956,7 @@ function DonutLegend({ data, metricKey }) {
         </div>
       </div>
 
-      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-2 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-50">
+      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-2 [scrollbar-color:#93c5fd_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-blue-300 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-sky-50/70">
         {data.map((item) => {
           const rawValue = Number(item.chartValue || 0);
           const percent = total ? Math.round((rawValue / total) * 100) : 0;
@@ -1861,7 +1965,7 @@ function DonutLegend({ data, metricKey }) {
           return (
             <div
               key={item.code}
-              className="rounded-2xl border border-slate-200 bg-white p-3 transition hover:bg-slate-50"
+              className="rounded-2xl border border-sky-100 bg-white/90 p-3 shadow-sm shadow-blue-50 transition hover:bg-sky-50/40"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
@@ -1871,7 +1975,7 @@ function DonutLegend({ data, metricKey }) {
                   />
 
                   <span className="truncate text-xs font-medium text-slate-600">
-                    <strong className="mr-1 font-bold text-slate-900">
+                    <strong className="mr-1 font-bold text-slate-950">
                       {item.code}
                     </strong>
                     {item.name}
@@ -1883,7 +1987,7 @@ function DonutLegend({ data, metricKey }) {
                 </span>
               </div>
 
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sky-50/70">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -1928,8 +2032,8 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left">
+    <div className="overflow-x-auto bg-white/80">
+      <table className="w-full min-w-[980px] border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-200">
             <TableHead>ลำดับ</TableHead>
@@ -1939,7 +2043,6 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
             <TableHead>หมวดหมู่</TableHead>
             <TableHead align="right">คงเหลือ</TableHead>
             <TableHead>หน่วย</TableHead>
-            
             <TableHead>สถานะ</TableHead>
           </tr>
         </thead>
@@ -1948,7 +2051,7 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
           {rows.map((row, index) => (
             <tr
               key={`${row.companyCode || "CO"}-${row.batchId}-${row.id}-${row.rowNo}-${index}`}
-              className="border-b border-slate-100 transition hover:bg-slate-50"
+              className="border-b border-blue-50 transition hover:bg-sky-50/35"
             >
               <td className="px-5 py-3">
                 <span className="font-mono text-xs font-medium text-slate-400">
@@ -1987,7 +2090,7 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
                   </span>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="rounded-xl border border-blue-100 bg-blue-50 px-2 py-1 font-mono text-[11px] font-bold text-blue-700">
+                    <span className="rounded-xl border border-sky-100 bg-sky-50/70 px-2 py-1 font-mono text-[11px] font-bold text-blue-700">
                       {row.categoryCode}
                     </span>
 
@@ -1999,7 +2102,7 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
               </td>
 
               <td className="px-5 py-3 text-right">
-                <div className="text-sm font-bold tabular-nums text-slate-900">
+                <div className="text-sm font-bold tabular-nums text-slate-950">
                   {formatNumber(row.quantity)}
                 </div>
               </td>
@@ -2009,8 +2112,6 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
                   {row.unit || "-"}
                 </span>
               </td>
-
-              
 
               <td className="px-5 py-3">
                 <StatusBadge status={row.status} />
@@ -2027,7 +2128,7 @@ function TableHead({ children, align = "left" }) {
   return (
     <th
       className={cn(
-        "whitespace-nowrap bg-slate-50 px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500",
+        "whitespace-nowrap bg-sky-50/55 px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-600",
         align === "right" && "text-right"
       )}
     >
@@ -2089,7 +2190,7 @@ function PaginationBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4">
+    <div className="flex flex-col gap-3 border-t border-sky-100 bg-gradient-to-r from-white to-sky-50/30 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
       <div className="text-sm font-medium text-slate-400">
         แสดง{" "}
         <strong className="font-bold text-slate-700">
@@ -2106,10 +2207,10 @@ function PaginationBar({
         รายการ
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
-          className="inline-flex h-9 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-9 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-sky-50/70 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage <= 1}
         >
@@ -2123,8 +2224,8 @@ function PaginationBar({
             className={cn(
               "inline-flex h-9 min-w-9 items-center justify-center rounded-2xl border px-3 text-sm font-bold transition",
               p === currentPage
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                ? "border-blue-600 bg-blue-600 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-sky-50/70 hover:text-blue-700"
             )}
             onClick={() => onPageChange(p)}
           >
@@ -2134,7 +2235,7 @@ function PaginationBar({
 
         <button
           type="button"
-          className="inline-flex h-9 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-9 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-sky-50/70 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage >= totalPages}
         >
@@ -2147,8 +2248,8 @@ function PaginationBar({
 
 function EmptyChart({ label }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white">
-      <span className="text-sm font-bold text-slate-400">{label}</span>
+    <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-dashed border-blue-200 bg-sky-50/30">
+      <span className="text-sm font-bold text-blue-400">{label}</span>
     </div>
   );
 }
@@ -2167,11 +2268,11 @@ function UploadModal({
   handleDrop,
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-[560px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
-        <div className="flex items-start justify-between border-b border-slate-200 bg-white px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-md">
+      <div className="max-h-[90vh] w-full max-w-[560px] overflow-hidden rounded-[2rem] border border-sky-100 bg-white/95 shadow-2xl shadow-blue-950/15 ring-1 ring-white/80 backdrop-blur-xl">
+        <div className="flex items-start justify-between border-b border-sky-100 bg-gradient-to-r from-sky-50/45 via-white to-slate-50 px-5 py-5 sm:px-6">
           <div>
-            <div className="text-lg font-bold tracking-tight text-slate-900">
+            <div className="text-lg font-bold tracking-tight text-slate-950">
               อัปโหลดไฟล์ Excel
             </div>
 
@@ -2191,7 +2292,7 @@ function UploadModal({
         </div>
 
         <form onSubmit={handleUpload}>
-          <div className="space-y-5 px-6 py-6">
+          <div className="space-y-5 px-5 py-6 sm:px-6">
             <div>
               <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
                 บริษัทปลายทาง
@@ -2211,7 +2312,7 @@ function UploadModal({
               </select>
             </div>
 
-            <div className="rounded-3xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+            <div className="rounded-3xl border border-sky-100 bg-sky-50/70 px-4 py-3">
               <div className="text-sm font-bold text-blue-800">
                 โหมดนำเข้า: แทนที่ยอดคงเหลือ
               </div>
@@ -2230,8 +2331,8 @@ function UploadModal({
                 className={cn(
                   "cursor-pointer rounded-3xl border-2 border-dashed px-6 py-8 text-center transition",
                   file
-                    ? "border-blue-200 bg-blue-50"
-                    : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50"
+                    ? "border-blue-300 bg-sky-50/70 shadow-inner shadow-sky-100"
+                    : "border-sky-100 bg-sky-50/30 hover:border-blue-300 hover:bg-sky-50/45"
                 )}
                 onDrop={handleDrop}
                 onDragOver={(e) => {
@@ -2253,7 +2354,7 @@ function UploadModal({
 
                 {file ? (
                   <>
-                    <div className="font-bold text-slate-900">{file.name}</div>
+                    <div className="font-bold text-slate-950">{file.name}</div>
 
                     <div className="mt-1 text-sm font-medium text-slate-500">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -2289,7 +2390,7 @@ function UploadModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4">
+          <div className="flex flex-col-reverse gap-2 border-t border-sky-100 bg-gradient-to-r from-white to-sky-50/45 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             <button
               type="button"
               className={ghostButton}

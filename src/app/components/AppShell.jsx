@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
 const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif';
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif';
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -16,7 +16,8 @@ function cn(...classes) {
 function getApiBaseUrl() {
   const url =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ;
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:4000/api";
 
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
@@ -49,7 +50,7 @@ async function readJson(response) {
 
 const menuItems = [
   {
-    label: "หน้าหลัก",
+    label: "แดชบอร์ด",
     description: "ภาพรวมระบบ",
     href: "/dashboard",
     icon: "dashboard",
@@ -164,26 +165,34 @@ export default function AppShell({ children }) {
   if (checking) {
     return (
       <main
-        className="min-h-screen bg-slate-50 px-6 py-6 text-slate-900"
+        className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.55),transparent_34%),radial-gradient(circle_at_top_right,rgba(219,234,254,0.75),transparent_34%),linear-gradient(180deg,#eff6ff_0%,#f8fafc_42%,#f1f5f9_100%)] px-6 py-6 text-slate-900"
         style={{ fontFamily: APP_FONT_FAMILY }}
       >
         <div className="mx-auto max-w-[1720px]">
           <div className="flex min-h-[70vh] items-center justify-center">
-            <div className="w-full max-w-[460px] rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 text-blue-700">
-                <ShellIcon name="shield" />
+            <div className="w-full max-w-[480px] overflow-hidden rounded-3xl border border-blue-100 bg-white/90 text-center shadow-[0_22px_70px_rgba(15,23,42,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
+              <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50 px-6 py-7">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-lg shadow-blue-200/70">
+                  <ShellIcon name="shield" />
+                </div>
+
+                <div className="mt-5 text-lg font-black tracking-tight text-slate-950">
+                  กำลังตรวจสอบการเข้าสู่ระบบ
+                </div>
+
+                <div className="mt-1.5 text-sm font-medium leading-relaxed text-slate-500">
+                  กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน
+                </div>
               </div>
 
-              <div className="mt-4 text-base font-bold text-slate-900">
-                กำลังตรวจสอบการเข้าสู่ระบบ
-              </div>
+              <div className="px-6 pb-6">
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-blue-50">
+                  <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-blue-600 to-sky-400" />
+                </div>
 
-              <div className="mt-1 text-sm font-medium text-slate-500">
-                กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์ผู้ใช้งาน
-              </div>
-
-              <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-500" />
+                <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-500">
+                  Secure Camera Management
+                </div>
               </div>
             </div>
           </div>
@@ -194,20 +203,22 @@ export default function AppShell({ children }) {
 
   return (
     <div
-      className="min-h-screen bg-slate-50 text-slate-900 lg:flex"
+      className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.42),transparent_32%),radial-gradient(circle_at_top_right,rgba(219,234,254,0.72),transparent_34%),linear-gradient(180deg,#eff6ff_0%,#f8fafc_42%,#f1f5f9_100%)] text-slate-900 lg:flex"
       style={{ fontFamily: APP_FONT_FAMILY }}
     >
-      <aside className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur lg:h-screen lg:w-[318px] lg:shrink-0 lg:border-b-0 lg:border-r">
+      <aside className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/88 shadow-[0_18px_55px_rgba(15,23,42,0.06)] ring-1 ring-white/70 backdrop-blur-xl lg:h-screen lg:w-[326px] lg:shrink-0 lg:border-b-0 lg:border-r">
         <div className="flex h-full flex-col">
-          <div className="border-b border-slate-200 px-5 py-5">
+          <div className="border-b border-blue-100/80 bg-gradient-to-r from-sky-50 via-white to-blue-50 px-5 py-5">
+            
+
             {user && (
-              <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mt-5 rounded-3xl border border-blue-100 bg-white/82 p-4 shadow-sm shadow-blue-100/60">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-white text-sm font-black text-blue-700 shadow-sm">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-sm font-black text-blue-700 shadow-sm">
                     {getInitials(user)}
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">
                       Current User
                     </div>
@@ -216,8 +227,8 @@ export default function AppShell({ children }) {
                       {user.fullName || user.username}
                     </div>
 
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <span className="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-flex max-w-full items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
                         {user.role || "User"}
                       </span>
                     </div>
@@ -228,7 +239,7 @@ export default function AppShell({ children }) {
           </div>
 
           <nav className="flex-1 overflow-y-auto px-4 py-5">
-            <div className="mb-3 flex items-center justify-between px-2">
+            <div className="mb-3 flex items-center justify-between gap-3 px-2">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-600">
                   Navigation
@@ -239,7 +250,7 @@ export default function AppShell({ children }) {
                 </div>
               </div>
 
-              <div className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+              <div className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
                 {menuItems.length} เมนู
               </div>
             </div>
@@ -253,18 +264,22 @@ export default function AppShell({ children }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "group flex items-center gap-3 rounded-3xl border px-3.5 py-3 transition focus:outline-none focus:ring-4 focus:ring-blue-100/70",
+                      "group relative flex items-center gap-3 overflow-hidden rounded-3xl border px-3.5 py-3 transition focus:outline-none focus:ring-4 focus:ring-blue-100/80",
                       active
-                        ? "border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
-                        : "border-transparent bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-700"
+                        ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-sky-50 text-blue-700 shadow-sm shadow-blue-100/70"
+                        : "border-transparent bg-white/55 text-slate-700 hover:border-blue-100 hover:bg-blue-50/65 hover:text-blue-700"
                     )}
                   >
+                    {active && (
+                      <div className="absolute inset-y-3 left-0 w-1 rounded-r-full bg-blue-600" />
+                    )}
+
                     <div
                       className={cn(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition",
                         active
-                          ? "border-blue-200 bg-white text-blue-700 shadow-sm"
-                          : "border-slate-200 bg-slate-50 text-slate-500 group-hover:border-blue-100 group-hover:bg-white group-hover:text-blue-700"
+                          ? "border-blue-100 bg-blue-600 text-white shadow-md shadow-blue-200"
+                          : "border-slate-200 bg-white text-slate-500 group-hover:border-blue-100 group-hover:bg-white group-hover:text-blue-700"
                       )}
                     >
                       <ShellIcon name={item.icon} />
@@ -290,8 +305,10 @@ export default function AppShell({ children }) {
                       </div>
                     </div>
 
-                    {active && (
+                    {active ? (
                       <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600 shadow-sm shadow-blue-300" />
+                    ) : (
+                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-200 opacity-0 transition group-hover:opacity-100" />
                     )}
                   </Link>
                 );
@@ -299,24 +316,26 @@ export default function AppShell({ children }) {
             </div>
           </nav>
 
-          <div className="border-t border-slate-200 bg-white px-4 py-4">
+          <div className="border-t border-blue-100/80 bg-gradient-to-r from-white via-sky-50/80 to-blue-50 px-4 py-4">
             <button
               type="button"
               onClick={logout}
-              className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100"
+              className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100"
             >
               <ShellIcon name="logout" />
               ออกจากระบบ
             </button>
 
-            <div className="mt-3 text-center text-[11px] font-medium text-slate-400">
+            <div className="mt-3 rounded-2xl border border-blue-100 bg-white/75 px-3 py-2 text-center text-[11px] font-semibold text-slate-400">
               Secure Camera Management System
             </div>
           </div>
         </div>
       </aside>
 
-      <section className="min-w-0 flex-1 bg-slate-50">{children}</section>
+      <section className="min-w-0 flex-1">
+        <div className="min-h-screen">{children}</div>
+      </section>
     </div>
   );
 }

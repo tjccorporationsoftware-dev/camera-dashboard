@@ -6,13 +6,14 @@ import AppShell from "../components/AppShell";
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL 
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:4000/api"
 ).replace(/\/$/, "");
 
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
 const APP_FONT_FAMILY =
-  '"Noto Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+  '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 
 const ROLE_OPTIONS = [
   {
@@ -27,22 +28,26 @@ const ROLE_OPTIONS = [
   },
 ];
 
-const pageContainer = "min-h-screen bg-slate-50 text-slate-900";
-const cardClass = "rounded-3xl border border-slate-200 bg-white shadow-sm";
+const pageContainer =
+  "min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.26),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.20),transparent_32%),linear-gradient(180deg,#fbfdff_0%,#ffffff_48%,#f8fafc_100%)] text-slate-900";
+
+const cardClass =
+  "rounded-[2rem] border border-sky-100/65 bg-white/96 shadow-[0_14px_42px_rgba(15,23,42,0.045)] ring-1 ring-white/80 backdrop-blur-md";
+
 const softCardClass =
-  "overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm";
+  "overflow-hidden rounded-[2rem] border border-sky-100/65 bg-white/96 shadow-[0_14px_42px_rgba(15,23,42,0.045)] ring-1 ring-white/80 backdrop-blur-md";
 
 const primaryButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 text-sm font-bold text-white shadow-sm shadow-blue-100 transition hover:from-blue-700 hover:to-sky-600 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none";
 
 const outlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white/90 px-4 text-sm font-bold text-slate-700 shadow-sm shadow-sky-50 transition hover:border-blue-200 hover:bg-blue-50/70 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const dangerOutlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const inputClass =
-  "h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
+  "h-11 rounded-2xl border border-sky-100 bg-white/95 px-3 text-sm font-semibold text-slate-800 shadow-sm shadow-sky-50 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -139,7 +144,7 @@ function getInitials(user) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-50">
       {children}
     </div>
   );
@@ -150,14 +155,14 @@ function RoleBadge({ role }) {
 
   if (safeRole === "ADMIN") {
     return (
-      <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+      <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 shadow-sm shadow-blue-50">
         ADMIN
       </span>
     );
   }
 
   return (
-    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">
+    <span className="inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm shadow-slate-100">
       USER
     </span>
   );
@@ -166,7 +171,7 @@ function RoleBadge({ role }) {
 function StatusBadge({ active }) {
   if (active) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 shadow-sm shadow-emerald-50">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         ใช้งานอยู่
       </span>
@@ -174,7 +179,7 @@ function StatusBadge({ active }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 shadow-sm shadow-rose-50">
       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
       ปิดใช้งาน
     </span>
@@ -221,8 +226,8 @@ function AlertBox({ type = "success", title, message, onClose }) {
 
 function EmptyState({ title, description }) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
-      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-3xl border border-blue-100 bg-blue-50 text-blue-700">
+    <div className="rounded-3xl border border-dashed border-sky-200 bg-white/80 px-6 py-12 text-center">
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-3xl border border-sky-100 bg-sky-50 text-blue-700">
         <UserIcon name="user" />
       </div>
 
@@ -239,13 +244,13 @@ function EmptyState({ title, description }) {
 
 function ModalShell({ title, description, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 px-4 py-6 backdrop-blur-md">
+      <div className="max-h-[90vh] w-full max-w-xl overflow-hidden rounded-[2rem] border border-sky-100 bg-white/95 shadow-2xl shadow-blue-950/15 ring-1 ring-white/80 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-sky-100/80 bg-gradient-to-r from-sky-50/65 via-white to-blue-50/35 px-6 py-5">
           <div>
             <SectionLabel>Form</SectionLabel>
 
-            <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-900">
+            <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-950">
               {title}
             </h2>
 
@@ -259,13 +264,13 @@ function ModalShell({ title, description, children, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-2xl p-2 text-slate-400 transition hover:bg-white hover:text-slate-700"
           >
             ✕
           </button>
         </div>
 
-        <div className="max-h-[calc(90vh-110px)] overflow-y-auto p-6 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
+        <div className="max-h-[calc(90vh-110px)] overflow-y-auto p-6 [scrollbar-color:#bae6fd_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-sky-50/50">
           {children}
         </div>
       </div>
@@ -369,10 +374,10 @@ function UserFormModal({
                   disabled={loading}
                   onClick={() => updateField("role", role.value)}
                   className={cn(
-                    "rounded-3xl border p-4 text-left transition focus:outline-none focus:ring-4 focus:ring-blue-100/70 disabled:cursor-not-allowed disabled:opacity-60",
+                    "rounded-3xl border p-4 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100/70 disabled:cursor-not-allowed disabled:opacity-60",
                     active
-                      ? "border-blue-300 bg-blue-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/50"
+                      ? "border-blue-300 bg-blue-50/80 shadow-blue-100"
+                      : "border-sky-100 bg-white/90 hover:border-blue-200 hover:bg-blue-50/50"
                   )}
                 >
                   <p
@@ -399,7 +404,7 @@ function UserFormModal({
         </div>
 
         {isEdit && (
-          <label className="flex cursor-pointer items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <label className="flex cursor-pointer items-center justify-between gap-4 rounded-3xl border border-sky-100 bg-slate-50/70 px-4 py-3">
             <div>
               <p className="text-sm font-bold text-slate-800">
                 สถานะการใช้งาน
@@ -422,7 +427,7 @@ function UserFormModal({
           </label>
         )}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-sky-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
@@ -493,7 +498,7 @@ function PasswordModal({ user, loading, onClose, onSubmit }) {
           />
         </FormField>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-sky-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
@@ -527,59 +532,94 @@ function FormField({ label, children }) {
 function SummaryCard({ label, value, description, tone = "slate", icon }) {
   const toneMap = {
     blue: {
-      border: "border-blue-100",
-      icon: "border-blue-100 bg-blue-50 text-blue-700",
-      value: "text-blue-700",
+      card: "border-sky-100 bg-gradient-to-br from-sky-50/70 via-white to-white",
+      icon:
+        "border-sky-200 bg-gradient-to-br from-blue-500 to-sky-500 text-white shadow-sky-100",
+      value: "text-slate-950",
+      label: "text-sky-600",
+      glow: "bg-sky-100/70",
     },
     green: {
-      border: "border-emerald-100",
-      icon: "border-emerald-100 bg-emerald-50 text-emerald-700",
-      value: "text-emerald-700",
+      card:
+        "border-emerald-100 bg-gradient-to-br from-emerald-50/55 via-white to-white",
+      icon:
+        "border-emerald-200 bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-emerald-100",
+      value: "text-slate-950",
+      label: "text-emerald-600",
+      glow: "bg-emerald-100/65",
     },
     violet: {
-      border: "border-violet-100",
-      icon: "border-violet-100 bg-violet-50 text-violet-700",
-      value: "text-violet-700",
+      card:
+        "border-violet-100 bg-gradient-to-br from-violet-50/55 via-white to-white",
+      icon:
+        "border-violet-200 bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-violet-100",
+      value: "text-slate-950",
+      label: "text-violet-600",
+      glow: "bg-violet-100/65",
     },
     rose: {
-      border: "border-rose-100",
-      icon: "border-rose-100 bg-rose-50 text-rose-700",
-      value: "text-rose-700",
+      card: "border-rose-100 bg-gradient-to-br from-rose-50/55 via-white to-white",
+      icon:
+        "border-rose-200 bg-gradient-to-br from-rose-500 to-pink-500 text-white shadow-rose-100",
+      value: "text-slate-950",
+      label: "text-rose-600",
+      glow: "bg-rose-100/65",
     },
     slate: {
-      border: "border-slate-200",
-      icon: "border-slate-100 bg-slate-50 text-slate-700",
-      value: "text-slate-900",
+      card:
+        "border-slate-200 bg-gradient-to-br from-slate-50/80 via-white to-sky-50/35",
+      icon:
+        "border-slate-200 bg-gradient-to-br from-slate-600 to-slate-700 text-white shadow-slate-100",
+      value: "text-slate-950",
+      label: "text-slate-500",
+      glow: "bg-slate-100/80",
     },
   };
 
   const selected = toneMap[tone] || toneMap.slate;
 
   return (
-    <div className={cn("rounded-3xl border bg-white p-5 shadow-sm", selected.border)}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-[2rem] border p-5 shadow-[0_12px_34px_rgba(15,23,42,0.045)] ring-1 ring-white/80 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_44px_rgba(15,23,42,0.06)]",
+        selected.card
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full blur-3xl transition group-hover:scale-110",
+          selected.glow
+        )}
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p
+            className={cn(
+              "text-xs font-bold uppercase tracking-wide",
+              selected.label
+            )}
+          >
             {label}
           </p>
 
           <p
             className={cn(
-              "mt-3 text-3xl font-bold tracking-tight tabular-nums",
+              "mt-3 text-3xl font-black tracking-tight tabular-nums",
               selected.value
             )}
           >
             {Number(value || 0).toLocaleString("th-TH")}
           </p>
 
-          <p className="mt-2 text-sm font-medium text-slate-500">
+          <p className="mt-2 truncate text-sm font-medium text-slate-500">
             {description}
           </p>
         </div>
 
         <div
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-lg",
             selected.icon
           )}
         >
@@ -911,59 +951,68 @@ export default function UsersPage() {
 
   return (
     <AppShell>
-      <main
-        className={pageContainer}
-        style={{ fontFamily: APP_FONT_FAMILY }}
-      >
-        <div className="mx-auto max-w-[1720px] px-8 py-8">
-          <section className={cn(cardClass, "mb-5 px-5 py-5")}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-                    <UserIcon name="users" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                        User Management
-                      </h1>
-
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                        Admin Console
-                      </span>
+      <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
+        <div className="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <section className={cn(cardClass, "mb-5 overflow-hidden")}>
+            <div className="border-b border-sky-100/80 bg-gradient-to-r from-sky-50/65 via-white to-blue-50/35 px-5 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-gradient-to-br from-white to-sky-50 text-blue-700 shadow-sm shadow-sky-100">
+                      <UserIcon name="users" />
                     </div>
 
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                      จัดการบัญชีผู้ใช้งาน เพิ่มผู้ใช้ แก้ไขสิทธิ์ รีเซ็ตรหัสผ่าน และลบผู้ใช้งาน
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl font-bold tracking-tight text-slate-950">
+                          User Management
+                        </h1>
+
+                        <span className="rounded-full border border-sky-100 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 shadow-sm">
+                          Admin Console
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-sm font-medium text-slate-500">
+                        จัดการบัญชีผู้ใช้งาน เพิ่มผู้ใช้ แก้ไขสิทธิ์ รีเซ็ตรหัสผ่าน และลบผู้ใช้งาน
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <RoleBadge role="ADMIN" />
+                    <span className="inline-flex rounded-full border border-sky-100 bg-sky-50/80 px-2.5 py-1 text-xs font-bold text-blue-700">
+                      {users.length.toLocaleString("th-TH")} บัญชี
+                    </span>
+                    <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                      ใช้งาน {activeUsers.toLocaleString("th-TH")}
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={loadAll}
-                  disabled={loading || actionLoading}
-                  className={outlineButton}
-                >
-                  <span className={loading ? "animate-spin" : ""}>
-                    <UserIcon name="reload" />
-                  </span>
-                  {loading ? "กำลังโหลด..." : "รีเฟรช"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={loadAll}
+                    disabled={loading || actionLoading}
+                    className={outlineButton}
+                  >
+                    <span className={loading ? "animate-spin" : ""}>
+                      <UserIcon name="reload" />
+                    </span>
+                    {loading ? "กำลังโหลด..." : "รีเฟรช"}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setCreateOpen(true)}
-                  disabled={loading || actionLoading}
-                  className={primaryButton}
-                >
-                  <UserIcon name="plus" />
-                  เพิ่มผู้ใช้งาน
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(true)}
+                    disabled={loading || actionLoading}
+                    className={primaryButton}
+                  >
+                    <UserIcon name="plus" />
+                    เพิ่มผู้ใช้งาน
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -1024,12 +1073,12 @@ export default function UsersPage() {
             />
           </section>
 
-          <section className={cn(cardClass, "mb-5 p-5")}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <section className={cn(cardClass, "mb-5 overflow-hidden")}>
+            <div className="flex flex-col gap-4 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/45 to-blue-50/25 px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <SectionLabel>Filters</SectionLabel>
 
-                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                   ตัวกรองข้อมูล
                 </h2>
 
@@ -1078,11 +1127,11 @@ export default function UsersPage() {
           </section>
 
           <section className={softCardClass}>
-            <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/45 to-blue-50/25 px-5 py-4 sm:flex-row sm:items-center">
               <div>
                 <SectionLabel>User Database</SectionLabel>
 
-                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                   รายชื่อผู้ใช้งาน
                 </h2>
 
@@ -1095,8 +1144,8 @@ export default function UsersPage() {
 
             {loading ? (
               <div className="p-6">
-                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-                  <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+                <div className="rounded-3xl border border-dashed border-sky-200 bg-slate-50/70 p-10 text-center">
+                  <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-sky-100 border-t-blue-600" />
                   <p className="text-sm font-bold text-slate-600">
                     กำลังโหลดรายชื่อผู้ใช้งาน...
                   </p>
@@ -1110,10 +1159,10 @@ export default function UsersPage() {
                 />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm">
+              <div className="overflow-x-auto bg-white/80">
+                <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
+                    <tr className="border-b border-sky-100">
                       <TableHead>ผู้ใช้งาน</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>สถานะ</TableHead>
@@ -1130,11 +1179,11 @@ export default function UsersPage() {
                       return (
                         <tr
                           key={user.id}
-                          className="border-b border-slate-100 transition hover:bg-slate-50"
+                          className="border-b border-sky-50 transition hover:bg-sky-50/35"
                         >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-sm font-black text-blue-700">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white text-sm font-black text-blue-700 shadow-sm shadow-sky-50">
                                 {getInitials(user)}
                               </div>
 
@@ -1254,7 +1303,7 @@ function TableHead({ children, align = "left" }) {
   return (
     <th
       className={cn(
-        "whitespace-nowrap bg-slate-50 px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500",
+        "whitespace-nowrap bg-sky-50/80 px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-600",
         align === "right" && "text-right"
       )}
     >
@@ -1266,7 +1315,7 @@ function TableHead({ children, align = "left" }) {
 function ActionButton({ children, tone = "slate", disabled, onClick }) {
   const toneClass = {
     slate:
-      "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700",
+      "border-sky-100 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700",
     blue: "border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100",
     green:
       "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
@@ -1279,7 +1328,7 @@ function ActionButton({ children, tone = "slate", disabled, onClick }) {
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "rounded-2xl border px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40",
+        "rounded-2xl border px-3 py-1.5 text-xs font-bold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40",
         toneClass[tone] || toneClass.slate
       )}
     >
