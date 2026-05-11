@@ -1939,7 +1939,7 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
             <TableHead>หมวดหมู่</TableHead>
             <TableHead align="right">คงเหลือ</TableHead>
             <TableHead>หน่วย</TableHead>
-            <TableHead align="right">มูลค่า</TableHead>
+            
             <TableHead>สถานะ</TableHead>
           </tr>
         </thead>
@@ -2010,11 +2010,7 @@ function InventoryTable({ loading, rows, startIndex = 0 }) {
                 </span>
               </td>
 
-              <td className="px-5 py-3 text-right">
-                <span className="whitespace-nowrap text-sm font-bold tabular-nums text-slate-700">
-                  {formatMoney(row.totalCost || row.totalValue || 0)}
-                </span>
-              </td>
+              
 
               <td className="px-5 py-3">
                 <StatusBadge status={row.status} />

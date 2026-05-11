@@ -965,7 +965,7 @@ export default function CameraRecordingsPage() {
                         </a>
                       )}
 
-                      {/* <button
+                       <button
                         type="button"
                         onClick={deleteSelected}
                         disabled={actionLoading || !selected}
@@ -973,7 +973,7 @@ export default function CameraRecordingsPage() {
                       >
                         <VideoIcon name="trash" />
                         {actionLoading ? "กำลังลบ..." : "ลบไฟล์วิดีโอ"}
-                      </button> */}
+                      </button> 
                     </div>
                   </div>
                 ) : (
