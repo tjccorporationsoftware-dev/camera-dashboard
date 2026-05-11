@@ -30,42 +30,110 @@ function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function getApiBaseUrl() {
-  const url = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-  return url.endsWith("/") ? url.slice(0, -1) : url;
+function normalizeBaseUrl(url) {
+  return String(url || "").trim().replace(/\/+$/, "");
 }
 
-/**
- * 🟢 ฟังก์ชันใหม่สำหรับดึง URL สำหรับสตรีมกล้อง (Cloudflare Tunnel)
- */
+function getApiBaseUrl() {
+  return normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:4000/api"
+  );
+}
+
 function getStreamBaseUrl() {
-  const url = process.env.NEXT_PUBLIC_STREAM_URL || "";
-  return url.endsWith("/") ? url.slice(0, -1) : url;
+  return normalizeBaseUrl(process.env.NEXT_PUBLIC_STREAM_URL || "");
 }
 
 function getAccessToken() {
   if (typeof window === "undefined") return "";
+
   return localStorage.getItem(ACCESS_TOKEN_KEY) || "";
 }
 
 function getAuthHeaders() {
   const token = getAccessToken();
+
   if (!token) return {};
+
   return {
     Authorization: `Bearer ${token}`,
   };
 }
 
-function withAccessToken(url) {
-  const token = getAccessToken();
-  if (!token) return url;
+function appendQueryParams(url, params = {}) {
+  if (!url) return "";
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+
+  if (!query) return url;
+
   const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}access_token=${encodeURIComponent(token)}`;
+
+  return `${url}${separator}${query}`;
+}
+
+function buildCameraStreamUrl(camera, reloadKey) {
+  if (!camera) return "";
+
+  const streamBaseUrl = getStreamBaseUrl();
+  const cameraPath = camera.path || camera.id || "";
+  const cameraId = camera.id || camera.path || "";
+
+  if (!cameraPath) return "";
+
+  let baseUrl = "";
+
+  if (streamBaseUrl) {
+    const encodedCameraPath = encodeURIComponent(cameraPath);
+    const encodedCameraId = encodeURIComponent(cameraId);
+
+    if (
+      streamBaseUrl.includes("{cameraPath}") ||
+      streamBaseUrl.includes("{path}") ||
+      streamBaseUrl.includes("{cameraId}") ||
+      streamBaseUrl.includes("{id}")
+    ) {
+      baseUrl = streamBaseUrl
+        .replaceAll("{cameraPath}", encodedCameraPath)
+        .replaceAll("{path}", encodedCameraPath)
+        .replaceAll("{cameraId}", encodedCameraId)
+        .replaceAll("{id}", encodedCameraId);
+    } else if (streamBaseUrl.includes("?")) {
+      baseUrl = streamBaseUrl;
+    } else {
+      baseUrl = `${streamBaseUrl}/${encodedCameraPath}`;
+    }
+  } else {
+    baseUrl = camera.liveUrl || "";
+  }
+
+  if (!baseUrl) return "";
+
+  return appendQueryParams(baseUrl, {
+    autoplay: "true",
+    muted: "true",
+    camera: cameraId,
+    cameraPath,
+    reload: reloadKey,
+    access_token: getAccessToken(),
+  });
 }
 
 async function readJson(response) {
   const text = await response.text();
+
   if (!text) return {};
+
   try {
     return JSON.parse(text);
   } catch {
@@ -100,6 +168,7 @@ async function apiRequest(url, options = {}, router) {
 
 function formatDateTime(value) {
   if (!value) return "-";
+
   try {
     return new Intl.DateTimeFormat("th-TH", {
       dateStyle: "medium",
@@ -112,31 +181,41 @@ function formatDateTime(value) {
 
 function formatElapsedClock(seconds) {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
+
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
   const remainSeconds = Math.floor(safeSeconds % 60);
+
   const pad = (value) => String(value).padStart(2, "0");
+
   if (hours > 0) {
     return `${pad(hours)}:${pad(minutes)}:${pad(remainSeconds)}`;
   }
+
   return `${pad(minutes)}:${pad(remainSeconds)}`;
 }
 
 function formatElapsedText(seconds) {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
+
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
   const remainSeconds = Math.floor(safeSeconds % 60);
+
   if (hours > 0) {
     return `${hours} ชั่วโมง ${minutes} นาที ${remainSeconds} วินาที`;
   }
+
   return `${minutes} นาที ${remainSeconds} วินาที`;
 }
 
 function getElapsedSeconds(startTime, nowMs = Date.now()) {
   if (!startTime) return 0;
+
   const startMs = new Date(startTime).getTime();
+
   if (!Number.isFinite(startMs)) return 0;
+
   return Math.max(0, Math.floor((nowMs - startMs) / 1000));
 }
 
@@ -158,12 +237,15 @@ function getRecordingOwnerText(session) {
 
 function isSessionOwner(session, user) {
   if (!session || !user) return false;
+
   const userId = getUserId(user);
   const username = getUsername(user);
   const displayName = getDisplayName(user);
+
   if (userId && session.startedByUserId && session.startedByUserId === userId) {
     return true;
   }
+
   if (
     username &&
     session.startedByUsername &&
@@ -171,6 +253,7 @@ function isSessionOwner(session, user) {
   ) {
     return true;
   }
+
   if (
     displayName &&
     session.recorderName &&
@@ -178,27 +261,33 @@ function isSessionOwner(session, user) {
   ) {
     return true;
   }
+
   return false;
 }
 
 function canCurrentUserEnterCamera(activeSession, currentUser) {
   if (!activeSession) return true;
+
   return isSessionOwner(activeSession, currentUser);
 }
 
 function canCurrentUserStopSession(session, user) {
   if (!session) return false;
+
   return isSessionOwner(session, user);
 }
 
 function getActiveSessionForCamera(activeSessions, camera) {
   if (!camera?.path) return null;
+
   return activeSessions[camera.path] || null;
 }
 
 function isCameraLockedByOtherUser(activeSessions, camera, currentUser) {
   const activeSession = getActiveSessionForCamera(activeSessions, camera);
+
   if (!activeSession) return false;
+
   return !canCurrentUserEnterCamera(activeSession, currentUser);
 }
 
@@ -213,6 +302,7 @@ function SectionLabel({ children }) {
 function Pill({ children, tone = "slate" }) {
   const baseStyle =
     "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold";
+
   const styles = {
     slate: "border-slate-200 bg-slate-50 text-slate-700",
     blue: "border-blue-100 bg-blue-50 text-blue-700",
@@ -221,6 +311,7 @@ function Pill({ children, tone = "slate" }) {
     amber: "border-amber-200 bg-amber-50 text-amber-800",
     violet: "border-violet-200 bg-violet-50 text-violet-700",
   };
+
   return (
     <span className={`${baseStyle} ${styles[tone] || styles.slate}`}>
       {children}
@@ -241,6 +332,7 @@ function DetailBox({ label, value }) {
 
 function AlertBox({ type = "success", title, message, onAction, actionText }) {
   const isError = type === "error";
+
   return (
     <section
       className={cn(
@@ -254,6 +346,7 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
         <h3 className="font-bold">{title}</h3>
         <p className="mt-1 font-medium">{message}</p>
       </div>
+
       {onAction && (
         <button
           type="button"
@@ -278,6 +371,7 @@ function EmptyBox({ title, desc }) {
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
         <CameraIcon name="camera" />
       </div>
+
       <div className="mt-3 text-sm font-bold text-slate-700">{title}</div>
       {desc && <div className="mt-1 text-sm font-medium text-slate-400">{desc}</div>}
     </section>
@@ -287,16 +381,19 @@ function EmptyBox({ title, desc }) {
 export default function CameraPage() {
   const router = useRouter();
   const apiBaseUrl = getApiBaseUrl();
-  const streamBaseUrl = getStreamBaseUrl(); // 🟢 ดึงค่า Stream URL
 
   const [currentUser, setCurrentUser] = useState(null);
   const [cameras, setCameras] = useState([]);
+
   const [selectedCameraId, setSelectedCameraId] = useState("");
+
   const [activeSessions, setActiveSessions] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [actionLoadingCamera, setActionLoadingCamera] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
   const [reloadKey, setReloadKey] = useState(0);
   const [nowText, setNowText] = useState(formatDateTime(new Date()));
   const [clockTick, setClockTick] = useState(Date.now());
@@ -308,6 +405,7 @@ export default function CameraPage() {
 
   const selectedCamera = useMemo(() => {
     if (!selectedCameraId) return null;
+
     return (
       cameras.find(
         (item) => item.id === selectedCameraId || item.path === selectedCameraId
@@ -341,11 +439,13 @@ export default function CameraPage() {
 
   const currentUserIsRecordingAnotherCamera = useMemo(() => {
     if (!currentUserActiveSession || !selectedCamera) return false;
+
     return currentUserActiveSession.cameraPath !== selectedCamera.path;
   }, [currentUserActiveSession, selectedCamera]);
 
   const selectedElapsedSeconds = useMemo(() => {
     if (!selectedActiveSession?.startTime) return 0;
+
     return getElapsedSeconds(selectedActiveSession.startTime, clockTick);
   }, [selectedActiveSession?.startTime, clockTick]);
 
@@ -361,8 +461,11 @@ export default function CameraPage() {
       },
       router
     );
+
     const user = json.data?.user || null;
+
     setCurrentUser(user);
+
     return user;
   }
 
@@ -374,19 +477,24 @@ export default function CameraPage() {
       },
       router
     );
+
     const list = Array.isArray(json.data) ? json.data : [];
+
     setCameras(list);
+
     return list;
   }
 
   async function loadCameraSessions(cameraList) {
     const safeList = Array.isArray(cameraList) ? cameraList : cameras;
     const activeMap = {};
+
     await Promise.all(
       safeList.map(async (camera) => {
         const params = new URLSearchParams({
           cameraPath: camera.path,
         });
+
         try {
           const activeJson = await apiRequest(
             `${apiBaseUrl}/recording-sessions/active?${params.toString()}`,
@@ -395,12 +503,14 @@ export default function CameraPage() {
             },
             router
           );
+
           activeMap[camera.path] = activeJson.data || null;
         } catch {
           activeMap[camera.path] = null;
         }
       })
     );
+
     setActiveSessions(activeMap);
   }
 
@@ -409,10 +519,12 @@ export default function CameraPage() {
       setLoading(true);
       setError("");
       setMessage("");
+
       const [, cameraList] = await Promise.all([
         loadCurrentUser(),
         loadCameras(),
       ]);
+
       await loadCameraSessions(cameraList);
     } catch (err) {
       setError(err?.message || "เกิดข้อผิดพลาด");
@@ -425,6 +537,7 @@ export default function CameraPage() {
 
   function showMessage(text, timeout = 3500) {
     setMessage(text);
+
     window.setTimeout(() => {
       setMessage("");
     }, timeout);
@@ -437,6 +550,7 @@ export default function CameraPage() {
       camera,
       currentUser
     );
+
     if (lockedByOther) {
       setError("");
       showMessage(
@@ -445,9 +559,12 @@ export default function CameraPage() {
         )} ไม่สามารถเข้าใช้งานจอนี้ได้`,
         4500
       );
+
       return;
     }
+
     setSelectedCameraId(camera.id);
+
     if (activeSession) {
       showMessage(`${camera.name} กำลังอัดอยู่`, 3000);
     } else {
@@ -460,9 +577,11 @@ export default function CameraPage() {
       setActionLoadingCamera(selectedCamera?.path || "");
       setError("");
       setMessage("");
+
       if (!selectedCamera?.path) {
         throw new Error("กรุณาเลือกจอก่อนเริ่มอัด");
       }
+
       if (selectedCameraIsLockedByOther) {
         throw new Error(
           `${selectedCamera.name} กำลังถูกอัดอยู่โดย ${getRecordingOwnerText(
@@ -470,9 +589,11 @@ export default function CameraPage() {
           )} กรุณาเลือกจออื่น`
         );
       }
+
       if (selectedActiveSession) {
         throw new Error(`${selectedCamera.name} กำลังถูกอัดอยู่แล้ว`);
       }
+
       if (currentUserIsRecordingAnotherCamera) {
         throw new Error(
           `คุณกำลังอัด ${
@@ -481,11 +602,15 @@ export default function CameraPage() {
           } อยู่ กรุณาหยุดรายการเดิมก่อน`
         );
       }
+
       const recorderName = getDisplayName(currentUser);
+
       if (!recorderName) {
         throw new Error("ไม่พบชื่อผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่");
       }
+
       const startTime = new Date();
+
       await apiRequest(
         `${apiBaseUrl}/recording-sessions/start`,
         {
@@ -503,7 +628,9 @@ export default function CameraPage() {
         },
         router
       );
+
       showMessage(`เริ่มอัดวิดีโอจาก ${selectedCamera.name} แล้ว`, 3000);
+
       await loadCameraSessions(cameras);
     } catch (err) {
       setError(err?.message || "เริ่มอัดไม่สำเร็จ");
@@ -517,9 +644,11 @@ export default function CameraPage() {
       setActionLoadingCamera(selectedCamera?.path || "");
       setError("");
       setMessage("");
+
       if (!selectedActiveSession?.id) {
         throw new Error("ไม่มีรายการที่กำลังอัด");
       }
+
       if (!canStopSelectedSession) {
         throw new Error(
           `${selectedCamera?.name || "กล้องนี้"} กำลังถูกอัดอยู่โดย ${getRecordingOwnerText(
@@ -527,6 +656,7 @@ export default function CameraPage() {
           )} คุณไม่มีสิทธิ์หยุดรายการนี้`
         );
       }
+
       await apiRequest(
         `${apiBaseUrl}/recording-sessions/${selectedActiveSession.id}/stop`,
         {
@@ -534,12 +664,16 @@ export default function CameraPage() {
         },
         router
       );
+
       showMessage(`หยุดอัดวิดีโอจาก ${selectedCamera.name} แล้ว`, 3000);
+
       setForm((prev) => ({
         ...prev,
         note: "",
       }));
+
       setSelectedCameraId("");
+
       await loadCameraSessions(cameras);
     } catch (err) {
       setError(err?.message || "หยุดอัดไม่สำเร็จ");
@@ -550,6 +684,7 @@ export default function CameraPage() {
 
   useEffect(() => {
     loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -557,6 +692,7 @@ export default function CameraPage() {
       setNowText(formatDateTime(new Date()));
       setClockTick(Date.now());
     }, 1000);
+
     return () => {
       clearInterval(timer);
     };
@@ -564,22 +700,27 @@ export default function CameraPage() {
 
   useEffect(() => {
     if (cameras.length === 0) return;
+
     const timer = setInterval(() => {
       loadCameraSessions(cameras).catch(() => {});
     }, 5000);
+
     return () => {
       clearInterval(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameras]);
 
   useEffect(() => {
     if (!selectedCamera || !selectedCameraIsLockedByOther) return;
+
     showMessage(
       `${selectedCamera.name} กำลังถูกอัดอยู่โดย ${getRecordingOwnerText(
         selectedActiveSession
       )} ระบบปิดจอหลักแล้ว`,
       4500
     );
+
     setSelectedCameraId("");
   }, [
     selectedCamera,
@@ -587,13 +728,9 @@ export default function CameraPage() {
     selectedActiveSession,
   ]);
 
-  /**
-   * 🟢 แก้ไขการสร้าง URL สำหรับจอหลัก (Main Feed)
-   */
   const selectedLiveUrl = useMemo(() => {
-    if (!selectedCamera?.path || !streamBaseUrl) return "";
-    return `${streamBaseUrl}/${selectedCamera.path}/?autoplay=true&muted=true&camera=${selectedCamera.id}&reload=${reloadKey}`;
-  }, [selectedCamera, streamBaseUrl, reloadKey]);
+    return buildCameraStreamUrl(selectedCamera, reloadKey);
+  }, [selectedCamera, reloadKey]);
 
   const startButtonDisabled = Boolean(
     actionLoadingCamera ||
@@ -604,30 +741,32 @@ export default function CameraPage() {
 
   function getStartButtonText() {
     if (actionLoadingCamera) return "กำลังเตรียมการ...";
+
     if (!selectedCamera) {
       return "กรุณาเลือกจอก่อนเริ่มอัด";
     }
+
     if (selectedCameraIsLockedByOther) {
       return `จอนี้ถูกอัดโดย ${getRecordingOwnerText(selectedActiveSession)}`;
     }
+
     if (selectedActiveSession) {
       return "จอนี้กำลังอัดอยู่";
     }
+
     if (currentUserIsRecordingAnotherCamera) {
       return `คุณกำลังอัด ${
         currentUserActiveSession.cameraName ||
         currentUserActiveSession.cameraPath
       } อยู่`;
     }
+
     return "เริ่มบันทึกวิดีโอ (Start Recording)";
   }
 
   return (
     <AppShell>
-      <main
-        className={pageContainer}
-        style={{ fontFamily: APP_FONT_FAMILY }}
-      >
+      <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
         <div className="mx-auto max-w-[1720px] px-8 py-8">
           <section className="mb-5 rounded-3xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -636,27 +775,33 @@ export default function CameraPage() {
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
                     <CameraIcon name="camera" />
                   </div>
+
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h1 className="text-xl font-bold tracking-tight text-slate-900">
                         Live Camera Console
                       </h1>
+
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
                         Clean View
                       </span>
                     </div>
+
                     <p className="mt-1 text-sm font-medium text-slate-500">
                       ระบบมอนิเตอร์กล้องและบันทึกวิดีโอ พร้อมควบคุมสิทธิ์การใช้งานแต่ละจอ
                     </p>
                   </div>
                 </div>
+
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Pill tone="blue">CCTV Recording</Pill>
+
                   <Pill tone={activeCount > 0 ? "red" : "green"}>
                     {activeCount > 0
                       ? `กำลังอัด ${activeCount} กล้อง`
                       : "สถานะ: พร้อมใช้งาน"}
                   </Pill>
+
                   {currentUserActiveSession && (
                     <Pill tone="amber">
                       คุณกำลังอัด{" "}
@@ -666,7 +811,18 @@ export default function CameraPage() {
                   )}
                 </div>
               </div>
+
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => setReloadKey((prev) => prev + 1)}
+                  disabled={loading}
+                  className={outlineButton}
+                >
+                  <CameraIcon name="reload" />
+                  รีโหลดกล้อง
+                </button>
+
                 <button
                   type="button"
                   onClick={loadAll}
@@ -727,9 +883,11 @@ export default function CameraPage() {
                 <div className="flex flex-col items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
                   <div>
                     <SectionLabel>Main Feed</SectionLabel>
+
                     <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
                       มอนิเตอร์กล้องหลัก
                     </h2>
+
                     <p className="mt-1 text-xs font-medium text-slate-500">
                       {selectedCamera
                         ? `${selectedCamera.name} • IP: ${
@@ -738,6 +896,7 @@ export default function CameraPage() {
                         : "ยังไม่ได้เลือกจอ กรุณาเลือกจาก Camera Wall ด้านล่าง"}
                     </p>
                   </div>
+
                   <Pill
                     tone={
                       selectedActiveSession
@@ -763,6 +922,7 @@ export default function CameraPage() {
                     )}
                   </Pill>
                 </div>
+
                 <div className="bg-slate-950 p-4">
                   <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-slate-800 bg-black shadow-inner">
                     {selectedLiveUrl ? (
@@ -777,27 +937,33 @@ export default function CameraPage() {
                         <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-slate-200">
                           <CameraIcon name="monitor" />
                         </div>
+
                         <div className="mt-2 text-base font-bold text-slate-200">
                           กรุณาเลือกจอก่อน
                         </div>
+
                         <div className="max-w-md px-6 text-sm text-slate-500">
                           Main Feed จะยังไม่แสดงวิดีโอ จนกว่าจะเลือกกล้องจาก
                           Camera Wall ด้านล่าง
                         </div>
                       </div>
                     )}
+
                     {selectedCamera && (
                       <div className="absolute left-4 top-4 z-10 rounded-2xl border border-white/10 bg-black/60 px-3 py-1.5 text-xs font-bold text-white shadow-sm backdrop-blur-sm">
                         {selectedCamera.name}
                       </div>
                     )}
+
                     {selectedActiveSession && (
                       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-black/70 px-4 py-2 text-right shadow-lg backdrop-blur-md">
                         <span className="h-3 w-3 animate-pulse rounded-full bg-rose-500" />
+
                         <div>
                           <p className="font-mono text-xl font-bold tracking-widest text-white">
                             {formatElapsedClock(selectedElapsedSeconds)}
                           </p>
+
                           <p className="text-[11px] font-medium text-white/70">
                             โดย {getRecordingOwnerText(selectedActiveSession)}
                           </p>
@@ -807,15 +973,18 @@ export default function CameraPage() {
                   </div>
                 </div>
               </div>
+
               <aside className="h-fit">
                 <section className={softCardClass}>
                   <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
                     <div>
                       <SectionLabel>Controller</SectionLabel>
+
                       <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
                         แผงควบคุม
                       </h2>
                     </div>
+
                     <Pill
                       tone={
                         selectedActiveSession
@@ -836,12 +1005,14 @@ export default function CameraPage() {
                         : "Select Screen"}
                     </Pill>
                   </div>
+
                   <div className="p-5">
                     {!selectedCamera ? (
                       <div className="rounded-3xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
                         <div className="font-bold">
                           กรุณาเลือกจอจาก Camera Wall
                         </div>
+
                         <div className="mt-1 text-xs font-medium leading-relaxed text-blue-700">
                           เมื่อเลือกจอแล้ว ระบบจะแสดง Main Feed และปุ่มเริ่มอัดของจอนั้น
                         </div>
@@ -864,6 +1035,7 @@ export default function CameraPage() {
                                 : "bg-amber-500"
                             )}
                           />
+
                           <h3
                             className={cn(
                               "mb-1 text-sm font-bold",
@@ -876,6 +1048,7 @@ export default function CameraPage() {
                               ? "กำลังบันทึกวิดีโอ"
                               : "จอนี้มีผู้ใช้อื่นกำลังบันทึกอยู่"}
                           </h3>
+
                           <p
                             className={cn(
                               "my-3 font-mono text-4xl font-bold tracking-tight",
@@ -886,6 +1059,7 @@ export default function CameraPage() {
                           >
                             {formatElapsedClock(selectedElapsedSeconds)}
                           </p>
+
                           <p
                             className={cn(
                               "text-xs font-bold",
@@ -897,6 +1071,7 @@ export default function CameraPage() {
                             {formatElapsedText(selectedElapsedSeconds)}
                           </p>
                         </div>
+
                         <div className="space-y-2">
                           <DetailBox
                             label="กล้อง"
@@ -905,31 +1080,37 @@ export default function CameraPage() {
                               selectedCamera?.name
                             }
                           />
+
                           <DetailBox
                             label="ประเภท"
                             value={selectedActiveSession.recordTypeLabel}
                           />
+
                           <DetailBox
                             label="ผู้ทำรายการ"
                             value={getRecordingOwnerText(selectedActiveSession)}
                           />
+
                           <DetailBox
                             label="วันที่และเวลา"
                             value={formatDateTime(
                               selectedActiveSession.startTime
                             )}
                           />
+
                           {selectedActiveSession.note && (
                             <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                               <p className="mb-1 text-xs font-bold text-slate-500">
                                 หมายเหตุ
                               </p>
+
                               <p className="whitespace-pre-wrap text-sm font-medium text-slate-900">
                                 {selectedActiveSession.note}
                               </p>
                             </div>
                           )}
                         </div>
+
                         {canStopSelectedSession ? (
                           <button
                             type="button"
@@ -946,12 +1127,14 @@ export default function CameraPage() {
                             <div className="font-bold">
                               ไม่สามารถอัดหรือหยุดจอนี้ได้
                             </div>
+
                             <div className="mt-1">
                               {selectedCamera?.name} กำลังถูกอัดโดย{" "}
                               <span className="font-bold">
                                 {getRecordingOwnerText(selectedActiveSession)}
                               </span>
                             </div>
+
                             <div className="mt-2 text-xs font-medium leading-relaxed text-amber-700">
                               กรุณาเลือกกล้องอื่นเพื่อเริ่มอัด ผู้ใช้หลายคนสามารถอัดพร้อมกันได้ แต่ต้องเป็นคนละจอ
                             </div>
@@ -964,11 +1147,13 @@ export default function CameraPage() {
                           label="อุปกรณ์ที่เลือก"
                           value={selectedCamera?.name || "ยังไม่ได้เลือกกล้อง"}
                         />
+
                         {currentUserIsRecordingAnotherCamera && (
                           <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                             <div className="font-bold">
                               คุณกำลังอัดอีกจออยู่
                             </div>
+
                             <div className="mt-1 text-xs font-medium leading-relaxed">
                               คุณกำลังอัด{" "}
                               <span className="font-bold">
@@ -979,11 +1164,13 @@ export default function CameraPage() {
                             </div>
                           </div>
                         )}
+
                         <div>
                           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
                             ประเภทการทำรายการ{" "}
                             <span className="text-rose-500">*</span>
                           </label>
+
                           <select
                             value={form.recordType}
                             onChange={(e) =>
@@ -1002,17 +1189,21 @@ export default function CameraPage() {
                             </option>
                           </select>
                         </div>
+
                         <div className="grid grid-cols-1 gap-2">
                           <DetailBox
                             label="ผู้ทำรายการ"
                             value={getDisplayName(currentUser) || "-"}
                           />
+
                           <DetailBox label="วันที่และเวลา" value={nowText} />
                         </div>
+
                         <div>
                           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
                             หมายเหตุ / เลขที่เอกสาร
                           </label>
+
                           <textarea
                             value={form.note}
                             onChange={(e) =>
@@ -1026,6 +1217,7 @@ export default function CameraPage() {
                             className={cn(inputClass, "block w-full resize-none")}
                           />
                         </div>
+
                         <button
                           type="button"
                           onClick={startRecording}
@@ -1047,43 +1239,49 @@ export default function CameraPage() {
               <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
                 <div>
                   <SectionLabel>Camera Wall</SectionLabel>
+
                   <h2 className="mt-2 text-base font-bold tracking-tight text-slate-900">
                     Camera Monitoring Wall
                   </h2>
+
                   <p className="mt-1 text-xs font-medium text-slate-500">
                     Live Grid 6 Channels
                   </p>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-500">
                     Online Monitor
                   </span>
+
                   <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                 </div>
               </div>
+
               <div className="grid w-full grid-cols-1 gap-3 bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 {cameras.slice(0, 6).map((camera) => {
                   const activeSession = getActiveSessionForCamera(
                     activeSessions,
                     camera
                   );
+
                   const isRecording = Boolean(activeSession);
                   const isSelected = selectedCamera?.id === camera.id;
+
                   const lockedByOther = isCameraLockedByOtherUser(
                     activeSessions,
                     camera,
                     currentUser
                   );
+
                   const isOwnerRecording =
                     isRecording && isSessionOwner(activeSession, currentUser);
+
                   const elapsedSeconds = isRecording
                     ? getElapsedSeconds(activeSession.startTime, clockTick)
                     : 0;
 
-                  /**
-                   * 🟢 แก้ไขการสร้าง URL สำหรับ Camera Wall
-                   */
-                  const liveUrl = `${streamBaseUrl}/${camera.path}/?autoplay=true&muted=true&camera=${camera.id}&reload=${reloadKey}`;
+                  const liveUrl = buildCameraStreamUrl(camera, reloadKey);
 
                   return (
                     <button
@@ -1101,17 +1299,24 @@ export default function CameraPage() {
                           : "cursor-pointer hover:border-blue-200"
                       )}
                     >
-                      <iframe
-                        key={`wall-${camera.id}-${reloadKey}`}
-                        src={liveUrl}
-                        className={cn(
-                          "pointer-events-none h-full w-full transition-opacity duration-300",
-                          lockedByOther
-                            ? "opacity-35 grayscale"
-                            : "opacity-80 group-hover:opacity-100"
-                        )}
-                        allow="autoplay; fullscreen"
-                      />
+                      {liveUrl ? (
+                        <iframe
+                          key={`wall-${camera.id}-${reloadKey}`}
+                          src={liveUrl}
+                          className={cn(
+                            "pointer-events-none h-full w-full transition-opacity duration-300",
+                            lockedByOther
+                              ? "opacity-35 grayscale"
+                              : "opacity-80 group-hover:opacity-100"
+                          )}
+                          allow="autoplay; fullscreen"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-950 text-xs font-bold text-slate-400">
+                          ไม่พบ URL กล้อง
+                        </div>
+                      )}
+
                       <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/70 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
                         <span
                           className={cn(
@@ -1125,12 +1330,14 @@ export default function CameraPage() {
                         />
                         {camera.name}
                       </div>
+
                       {isRecording && (
                         <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-2xl border border-rose-400/50 bg-rose-600/90 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm">
                           <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                           REC {formatElapsedClock(elapsedSeconds)}
                         </div>
                       )}
+
                       {isRecording && !lockedByOther && (
                         <div
                           className={cn(
@@ -1143,19 +1350,24 @@ export default function CameraPage() {
                           โดย {getRecordingOwnerText(activeSession)}
                         </div>
                       )}
+
                       {lockedByOther && (
                         <>
                           <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px]" />
+
                           <div className="absolute left-4 top-4 z-30 rounded-2xl bg-amber-400 px-3 py-1 text-[11px] font-black text-slate-950">
                             LOCKED
                           </div>
+
                           <div className="absolute inset-x-4 bottom-4 z-30 rounded-3xl border border-amber-300/60 bg-black/80 p-3 text-left text-white shadow-lg">
                             <div className="text-xs font-bold text-amber-300">
                               จอนี้กำลังถูกใช้งาน
                             </div>
+
                             <div className="mt-1 truncate text-[11px] font-medium text-white/80">
                               อัดโดย {getRecordingOwnerText(activeSession)}
                             </div>
+
                             <div className="mt-1 text-[11px] font-medium text-white/60">
                               ไม่สามารถกดเข้าจอนี้ได้
                             </div>
@@ -1185,6 +1397,7 @@ function CameraIcon({ name }) {
     strokeLinecap: "round",
     strokeLinejoin: "round",
   };
+
   if (name === "camera") {
     return (
       <svg {...common}>
@@ -1193,6 +1406,7 @@ function CameraIcon({ name }) {
       </svg>
     );
   }
+
   if (name === "reload") {
     return (
       <svg {...common}>
@@ -1203,6 +1417,7 @@ function CameraIcon({ name }) {
       </svg>
     );
   }
+
   if (name === "monitor") {
     return (
       <svg {...common}>
@@ -1212,6 +1427,7 @@ function CameraIcon({ name }) {
       </svg>
     );
   }
+
   return (
     <svg {...common}>
       <path d="M4 6h16" />
