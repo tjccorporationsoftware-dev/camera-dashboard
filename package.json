@@ -2,15 +2,16 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
+ "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
-    "start": "next start"
+    "start": "next start -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
     "next": "16.2.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
