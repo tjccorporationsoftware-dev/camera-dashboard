@@ -198,16 +198,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <div className="mb-5 rounded-3xl border border-blue-100 bg-blue-50/80 px-4 py-3 lg:hidden">
-                <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                  API Server
-                </p>
-
-                <p className="mt-1 break-all text-xs font-semibold text-blue-900">
-                  {apiBaseUrl}
-                </p>
-              </div>
-
+              
               {error && (
                 <div className="mb-5 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
                   <div className="flex items-start gap-2">
