@@ -2,7 +2,8 @@
 
 import AppShell from "../components/AppShell";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Hls from "hls.js";
 
 const APP_FONT_FAMILY =
   '"Noto Sans Thai", "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
@@ -86,7 +87,7 @@ function appendQueryParams(url, params = {}) {
   return `${url}${separator}${query}`;
 }
 
-function buildCameraStreamUrl(camera, reloadKey) {
+function buildCameraHlsUrl(camera, reloadKey) {
   if (!camera) return "";
 
   const streamBaseUrl = getStreamBaseUrl();
@@ -95,12 +96,12 @@ function buildCameraStreamUrl(camera, reloadKey) {
 
   if (!cameraPath) return "";
 
+  const encodedCameraPath = encodeURIComponent(cameraPath);
+  const encodedCameraId = encodeURIComponent(cameraId);
+
   let baseUrl = "";
 
   if (streamBaseUrl) {
-    const encodedCameraPath = encodeURIComponent(cameraPath);
-    const encodedCameraId = encodeURIComponent(cameraId);
-
     if (
       streamBaseUrl.includes("{cameraPath}") ||
       streamBaseUrl.includes("{path}") ||
@@ -112,24 +113,23 @@ function buildCameraStreamUrl(camera, reloadKey) {
         .replaceAll("{path}", encodedCameraPath)
         .replaceAll("{cameraId}", encodedCameraId)
         .replaceAll("{id}", encodedCameraId);
-    } else if (streamBaseUrl.includes("?")) {
+    } else if (streamBaseUrl.endsWith(".m3u8")) {
       baseUrl = streamBaseUrl;
     } else {
-      baseUrl = `${streamBaseUrl}/${encodedCameraPath}`;
+      baseUrl = `${streamBaseUrl}/${encodedCameraPath}/index.m3u8`;
     }
-  } else {
-    baseUrl = camera.liveUrl || "";
+  } else if (camera.hlsUrl) {
+    baseUrl = camera.hlsUrl;
+  } else if (camera.liveUrl && String(camera.liveUrl).includes(".m3u8")) {
+    baseUrl = camera.liveUrl;
   }
 
   if (!baseUrl) return "";
 
   return appendQueryParams(baseUrl, {
-    autoplay: "true",
-    muted: "true",
     camera: cameraId,
     cameraPath,
     reload: reloadKey,
-    access_token: getAccessToken(),
   });
 }
 
@@ -384,9 +384,196 @@ function EmptyBox({ title, desc }) {
   );
 }
 
+async function requestElementFullscreen(element) {
+  if (!element) return false;
+
+  try {
+    if (element.requestFullscreen) {
+      await element.requestFullscreen();
+      return true;
+    }
+
+    if (element.webkitRequestFullscreen) {
+      element.webkitRequestFullscreen();
+      return true;
+    }
+
+    if (element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+function FullscreenButton({ targetRef, disabled = false }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        requestElementFullscreen(targetRef?.current);
+      }}
+      className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-black/60 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md transition hover:bg-black/80 focus:outline-none focus:ring-4 focus:ring-white/20 disabled:cursor-not-allowed disabled:opacity-45"
+      title="เปิดเต็มจอ"
+    >
+      <CameraIcon name="fullscreen" />
+      เต็มจอ
+    </button>
+  );
+}
+
+function LiveCameraVideo({ src, className = "" }) {
+  const videoRef = useRef(null);
+  const [status, setStatus] = useState(src ? "loading" : "idle");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video || !src) {
+      setStatus("idle");
+      setError("");
+      return undefined;
+    }
+
+    let hls = null;
+    let mounted = true;
+
+    setStatus("loading");
+    setError("");
+
+    video.controls = false;
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    const markReady = () => {
+      if (!mounted) return;
+      setStatus("ready");
+      setError("");
+    };
+
+    const markWaiting = () => {
+      if (!mounted) return;
+      setStatus((prev) => (prev === "ready" ? "ready" : "loading"));
+    };
+
+    const playVideo = () => {
+      video.play().catch(() => {
+        // Browser อาจบล็อก autoplay บางจังหวะ แต่ muted + playsInline จะช่วยให้เล่นได้เอง
+      });
+    };
+
+    video.addEventListener("playing", markReady);
+    video.addEventListener("canplay", markReady);
+    video.addEventListener("waiting", markWaiting);
+    video.addEventListener("stalled", markWaiting);
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+      video.load();
+      playVideo();
+    } else if (Hls.isSupported()) {
+      hls = new Hls({
+        lowLatencyMode: true,
+        backBufferLength: 10,
+        maxBufferLength: 12,
+        liveSyncDurationCount: 2,
+        liveMaxLatencyDurationCount: 6,
+        enableWorker: true,
+      });
+
+      hls.loadSource(src);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        playVideo();
+      });
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (!mounted) return;
+
+        if (data?.fatal) {
+          setStatus("error");
+          setError("ไม่สามารถโหลดสัญญาณกล้องได้");
+
+          try {
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              hls.startLoad();
+            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              hls.recoverMediaError();
+            } else {
+              hls.destroy();
+            }
+          } catch {
+            // ไม่ต้องแสดง error ซ้ำ
+          }
+        }
+      });
+    } else {
+      setStatus("error");
+      setError("เบราว์เซอร์นี้ไม่รองรับ HLS");
+    }
+
+    return () => {
+      mounted = false;
+
+      video.removeEventListener("playing", markReady);
+      video.removeEventListener("canplay", markReady);
+      video.removeEventListener("waiting", markWaiting);
+      video.removeEventListener("stalled", markWaiting);
+
+      if (hls) {
+        hls.destroy();
+      }
+
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [src]);
+
+  return (
+    <div className={cn("relative h-full w-full overflow-hidden bg-black", className)}>
+      <video
+        ref={videoRef}
+        className="h-full w-full object-cover"
+        muted
+        autoPlay
+        playsInline
+        controls={false}
+        disablePictureInPicture
+        controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
+        onContextMenu={(event) => event.preventDefault()}
+      />
+
+      {status === "loading" && !error && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 px-4 text-center">
+          <div className="rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-bold text-white/80 backdrop-blur-sm">
+            กำลังเชื่อมต่อสัญญาณ...
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 px-4 text-center text-xs font-bold text-white">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CameraPage() {
   const router = useRouter();
   const apiBaseUrl = getApiBaseUrl();
+  const mainFeedRef = useRef(null);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [cameras, setCameras] = useState([]);
@@ -731,7 +918,7 @@ export default function CameraPage() {
   }, [selectedCamera, selectedCameraIsLockedByOther, selectedActiveSession]);
 
   const selectedLiveUrl = useMemo(() => {
-    return buildCameraStreamUrl(selectedCamera, reloadKey);
+    return buildCameraHlsUrl(selectedCamera, reloadKey);
   }, [selectedCamera, reloadKey]);
 
   const startButtonDisabled = Boolean(
@@ -928,13 +1115,15 @@ export default function CameraPage() {
                 </div>
 
                 <div className="bg-slate-950 p-4">
-                  <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-slate-800 bg-black shadow-inner">
+                  <div
+                    ref={mainFeedRef}
+                    className="relative aspect-video w-full overflow-hidden rounded-3xl border border-slate-800 bg-black shadow-inner"
+                  >
                     {selectedLiveUrl ? (
-                      <iframe
+                      <LiveCameraVideo
                         key={`selected-main-${selectedCamera?.id}-${reloadKey}`}
                         src={selectedLiveUrl}
-                        className="absolute inset-0 h-full w-full border-0"
-                        allow="autoplay; fullscreen"
+                        className="absolute inset-0 h-full w-full"
                       />
                     ) : (
                       <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-2 text-center text-slate-400">
@@ -957,6 +1146,13 @@ export default function CameraPage() {
                         {selectedCamera.name}
                       </div>
                     )}
+
+                    <div className="absolute right-4 top-4 z-20">
+                      <FullscreenButton
+                        targetRef={mainFeedRef}
+                        disabled={!selectedLiveUrl}
+                      />
+                    </div>
 
                     {selectedActiveSession && (
                       <div className="absolute bottom-4 right-4 z-10 flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-black/70 px-4 py-2 text-right shadow-lg backdrop-blur-md">
@@ -1287,13 +1483,20 @@ export default function CameraPage() {
                     ? getElapsedSeconds(activeSession.startTime, clockTick)
                     : 0;
 
-                  const liveUrl = buildCameraStreamUrl(camera, reloadKey);
+                  const liveUrl = buildCameraHlsUrl(camera, reloadKey);
 
                   return (
                     <button
                       key={camera.id}
                       type="button"
                       onClick={() => selectCamera(camera)}
+                      onDoubleClick={() => {
+                        if (lockedByOther) return;
+                        selectCamera(camera);
+                        setTimeout(() => {
+                          requestElementFullscreen(mainFeedRef.current);
+                        }, 80);
+                      }}
                       disabled={lockedByOther}
                       className={cn(
                         "group relative aspect-video w-full overflow-hidden rounded-3xl border bg-black text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100/70",
@@ -1306,7 +1509,7 @@ export default function CameraPage() {
                       )}
                     >
                       {liveUrl ? (
-                        <iframe
+                        <LiveCameraVideo
                           key={`wall-${camera.id}-${reloadKey}`}
                           src={liveUrl}
                           className={cn(
@@ -1315,7 +1518,6 @@ export default function CameraPage() {
                               ? "opacity-35 grayscale"
                               : "opacity-80 group-hover:opacity-100"
                           )}
-                          allow="autoplay; fullscreen"
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-slate-950 text-xs font-bold text-slate-400">
@@ -1430,6 +1632,17 @@ function CameraIcon({ name }) {
         <rect x="3" y="4" width="18" height="13" rx="2" />
         <path d="M8 21h8" />
         <path d="M12 17v4" />
+      </svg>
+    );
+  }
+
+  if (name === "fullscreen") {
+    return (
+      <svg {...common}>
+        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+        <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+        <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
       </svg>
     );
   }
