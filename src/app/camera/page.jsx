@@ -956,9 +956,9 @@ export default function CameraPage() {
   return (
     <AppShell>
       <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
-        <div className="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mx-auto max-w-430 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
           <section className={cn(cardClass, "mb-5 overflow-hidden")}>
-            <div className="border-b border-sky-100/80 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/50 px-5 py-5">
+            <div className="border-b border-sky-100/80 bg-linear-to-r from-sky-50/80 via-white to-blue-50/50 px-5 py-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-4">
@@ -1071,7 +1071,7 @@ export default function CameraPage() {
           {!loading && cameras.length > 0 && (
             <section className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
               <div className={softCardClass}>
-                <div className="flex flex-col items-start justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
+                <div className="flex flex-col items-start justify-between gap-3 border-b border-sky-100/80 bg-linear-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                   <div>
                     <SectionLabel>Main Feed</SectionLabel>
 
@@ -1175,7 +1175,7 @@ export default function CameraPage() {
 
               <aside className="h-fit">
                 <section className={softCardClass}>
-                  <div className="flex items-center justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4">
+                  <div className="flex items-center justify-between gap-3 border-b border-sky-100/80 bg-linear-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4">
                     <div>
                       <SectionLabel>Controller</SectionLabel>
 
@@ -1438,7 +1438,7 @@ export default function CameraPage() {
 
           {!loading && cameras.length > 0 && (
             <section className={softCardClass}>
-              <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
+              <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-linear-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
                 <div>
                   <SectionLabel>Camera Wall</SectionLabel>
 

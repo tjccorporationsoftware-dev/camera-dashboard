@@ -20,25 +20,25 @@ const DEFAULT_RETENTION_DAYS = 14;
 const ACCESS_TOKEN_KEY = "camera_access_token";
 
 const pageContainer =
-  "min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.38),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.28),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_45%,#f8fafc_100%)] text-slate-900";
+  "min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(224,242,254,0.34),transparent_34%),radial-gradient(circle_at_92%_4%,rgba(219,234,254,0.28),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#ffffff_48%,#f8fafc_100%)] text-slate-900";
 
 const cardClass =
-  "rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
+  "rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-sm ring-1 ring-white/80 backdrop-blur-md";
 
 const softCardClass =
-  "overflow-hidden rounded-[2rem] border border-sky-100/70 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.055)] ring-1 ring-white/80 backdrop-blur-md";
+  "overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/95 shadow-sm ring-1 ring-white/80 backdrop-blur-md";
 
 const primaryButton =
   "inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-100 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 
 const outlineButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white/90 px-4 text-sm font-bold text-slate-700 shadow-sm shadow-sky-50 transition hover:border-blue-200 hover:bg-blue-50/70 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const dangerOutlineButton =
   "inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-bold text-rose-700 shadow-sm transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-50";
 
 const inputClass =
-  "h-11 rounded-2xl border border-sky-100 bg-white/95 px-3 text-sm font-bold text-slate-800 shadow-sm shadow-sky-50 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80";
+  "h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100/80";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -58,7 +58,6 @@ function getApiBaseUrl() {
 
 function getAccessToken() {
   if (typeof window === "undefined") return "";
-
   return localStorage.getItem(ACCESS_TOKEN_KEY) || "";
 }
 
@@ -125,7 +124,7 @@ function formatDateTime(value) {
   try {
     return new Intl.DateTimeFormat("th-TH", {
       dateStyle: "medium",
-      timeStyle: "medium",
+      timeStyle: "short",
     }).format(new Date(value));
   } catch {
     return value;
@@ -137,12 +136,14 @@ function formatDuration(seconds) {
 
   if (!safeSeconds) return "-";
 
-  const minutes = Math.floor(safeSeconds / 60);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
   const remainSeconds = Math.floor(safeSeconds % 60);
 
-  if (minutes <= 0) return `${remainSeconds} วินาที`;
+  if (hours > 0) return `${hours} ชม. ${minutes} นาที`;
+  if (minutes > 0) return `${minutes} นาที ${remainSeconds} วิ`;
 
-  return `${minutes} นาที ${remainSeconds} วินาที`;
+  return `${remainSeconds} วิ`;
 }
 
 function formatSize(size) {
@@ -169,6 +170,50 @@ function toTimeMs(value) {
   return Number.isFinite(ms) ? ms : null;
 }
 
+function parseMediaMtxFileTime(fileName) {
+  const match = String(fileName || "").match(
+    /^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/
+  );
+
+  if (!match) return null;
+
+  const [, yyyy, mm, dd, hh, mi, ss] = match;
+
+  const date = new Date(
+    Number(yyyy),
+    Number(mm) - 1,
+    Number(dd),
+    Number(hh),
+    Number(mi),
+    Number(ss)
+  );
+
+  const ms = date.getTime();
+
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function getSortTimeMs(item) {
+  return (
+    toTimeMs(item?.startTime) ||
+    toTimeMs(item?.eventDateTime) ||
+    toTimeMs(item?.createdAt) ||
+    toTimeMs(item?.modifiedAt) ||
+    parseMediaMtxFileTime(item?.fileName) ||
+    0
+  );
+}
+
+function sortNewestFirst(list) {
+  return [...list].sort((a, b) => {
+    const timeDiff = getSortTimeMs(b) - getSortTimeMs(a);
+
+    if (timeDiff !== 0) return timeDiff;
+
+    return String(b.fileName || "").localeCompare(String(a.fileName || ""));
+  });
+}
+
 function getRetentionDays(item) {
   const days = Number(item?.retentionDays || DEFAULT_RETENTION_DAYS);
 
@@ -180,7 +225,8 @@ function getRetentionStartAtMs(item) {
     toTimeMs(item?.retentionStartAt) ||
     toTimeMs(item?.createdAt) ||
     toTimeMs(item?.startTime) ||
-    toTimeMs(item?.modifiedAt)
+    toTimeMs(item?.modifiedAt) ||
+    parseMediaMtxFileTime(item?.fileName)
   );
 }
 
@@ -222,15 +268,10 @@ function formatRemainingTime(item, nowMs = Date.now()) {
   const hours = Math.floor((totalMinutes - days * 24 * 60) / 60);
   const minutes = totalMinutes % 60;
 
-  if (days > 0) {
-    return `เหลือ ${days} วัน ${hours} ชั่วโมง`;
-  }
+  if (days > 0) return `${days} วัน ${hours} ชม.`;
+  if (hours > 0) return `${hours} ชม. ${minutes} นาที`;
 
-  if (hours > 0) {
-    return `เหลือ ${hours} ชั่วโมง ${minutes} นาที`;
-  }
-
-  return `เหลือ ${minutes} นาที`;
+  return `${minutes} นาที`;
 }
 
 function getRetentionTone(item, nowMs = Date.now()) {
@@ -245,18 +286,6 @@ function getRetentionTone(item, nowMs = Date.now()) {
   if (remainingHours <= 48) return "amber";
 
   return "green";
-}
-
-function getRetentionPercent(item, nowMs = Date.now()) {
-  const deleteAtMs = getAutoDeleteAtMs(item);
-  const startAtMs = getRetentionStartAtMs(item);
-
-  if (!deleteAtMs || !startAtMs || deleteAtMs <= startAtMs) return 0;
-
-  const totalMs = deleteAtMs - startAtMs;
-  const usedMs = Math.min(Math.max(nowMs - startAtMs, 0), totalMs);
-
-  return Math.round((usedMs / totalMs) * 100);
 }
 
 function getAutoDeleteAtText(item) {
@@ -277,14 +306,6 @@ function getItemTitle(item) {
   return "ไฟล์วิดีโอ";
 }
 
-function getItemSubTitle(item) {
-  if (!item) return "-";
-
-  return `${item.cameraName || item.cameraPath || "กล้อง"} • ${
-    item.fileName || "-"
-  }`;
-}
-
 function getItemName(item) {
   if (!item) return "-";
 
@@ -293,9 +314,19 @@ function getItemName(item) {
   }`;
 }
 
+function getDisplayTime(item) {
+  return (
+    item.startTime ||
+    item.eventDateTime ||
+    item.createdAt ||
+    item.modifiedAt ||
+    null
+  );
+}
+
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 shadow-sm shadow-sky-50">
+    <div className="inline-flex rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
       {children}
     </div>
   );
@@ -303,16 +334,15 @@ function SectionLabel({ children }) {
 
 function Pill({ children, tone = "slate" }) {
   const baseStyle =
-    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm";
+    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold";
 
   const styles = {
-    slate: "border-slate-200 bg-white text-slate-700 shadow-slate-100",
-    blue: "border-sky-100 bg-sky-50/90 text-blue-700 shadow-sky-50",
-    green:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-emerald-50",
-    red: "border-rose-200 bg-rose-50 text-rose-700 shadow-rose-50",
-    amber: "border-amber-200 bg-amber-50 text-amber-800 shadow-amber-50",
-    violet: "border-violet-200 bg-violet-50 text-violet-700 shadow-violet-50",
+    slate: "border-slate-200 bg-white text-slate-700",
+    blue: "border-sky-100 bg-sky-50 text-blue-700",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    red: "border-rose-200 bg-rose-50 text-rose-700",
+    amber: "border-amber-200 bg-amber-50 text-amber-800",
+    violet: "border-violet-200 bg-violet-50 text-violet-700",
   };
 
   return (
@@ -326,7 +356,7 @@ function DetailBox({ label, value, className = "" }) {
   return (
     <div
       className={cn(
-        "flex flex-col justify-center rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3",
+        "rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3",
         className
       )}
     >
@@ -334,55 +364,6 @@ function DetailBox({ label, value, className = "" }) {
       <p className="truncate text-sm font-bold text-slate-900">
         {value || "-"}
       </p>
-    </div>
-  );
-}
-
-function SessionInfoBadge({ item }) {
-  if (!item?.hasSessionInfo) {
-    return <Pill tone="slate">ไม่มีข้อมูล session</Pill>;
-  }
-
-  return <Pill tone="blue">มีข้อมูล session</Pill>;
-}
-
-function RetentionBadge({ item, nowMs, compact = false }) {
-  const tone = getRetentionTone(item, nowMs);
-  const text = formatRemainingTime(item, nowMs);
-
-  if (compact) {
-    return <Pill tone={tone}>{text}</Pill>;
-  }
-
-  return <Pill tone={tone}>ลบอัตโนมัติ: {text}</Pill>;
-}
-
-function RetentionProgress({ item, nowMs }) {
-  const percent = getRetentionPercent(item, nowMs);
-  const tone = getRetentionTone(item, nowMs);
-
-  const barClass =
-    tone === "red"
-      ? "bg-rose-500"
-      : tone === "amber"
-      ? "bg-amber-500"
-      : tone === "green"
-      ? "bg-emerald-500"
-      : "bg-slate-400";
-
-  return (
-    <div className="mt-2">
-      <div className="mb-1 flex items-center justify-between text-[11px]">
-        <span className="font-bold text-slate-400">อายุไฟล์</span>
-        <span className="font-bold text-slate-600">{percent}%</span>
-      </div>
-
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full transition-all ${barClass}`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
     </div>
   );
 }
@@ -424,7 +405,7 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
 
 function EmptyState({ title, desc }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-sky-200 bg-white/80 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-sky-100 bg-sky-50 text-blue-700">
         <VideoIcon name="video" />
       </div>
@@ -456,10 +437,8 @@ export default function CameraRecordingsPage() {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState("");
   const [videoNonce, setVideoNonce] = useState(Date.now());
-  const [recordingsDir, setRecordingsDir] = useState("");
-  const [sessionFile, setSessionFile] = useState("");
-  const [countByCamera, setCountByCamera] = useState({});
 
+  const [countByCamera, setCountByCamera] = useState({});
   const [selectedCameraPath, setSelectedCameraPath] = useState("tapo01");
   const [retentionNow, setRetentionNow] = useState(Date.now());
 
@@ -478,22 +457,27 @@ export default function CameraRecordingsPage() {
         router
       );
 
-      const list = Array.isArray(json.data) ? json.data : [];
+      const list = sortNewestFirst(Array.isArray(json.data) ? json.data : []);
 
       setItems(list);
-      setRecordingsDir(json.meta?.recordingsDir || "");
-      setSessionFile(json.meta?.sessionFile || "");
       setCountByCamera(json.meta?.countByCamera || {});
 
       const keep = keepId ? list.find((item) => item.id === keepId) : null;
 
-      const currentCameraFirstItem = list.find(
+      const currentCameraNewestItem = list.find(
         (item) => item.cameraPath === selectedCameraPath
       );
 
-      const nextSelected = keep || currentCameraFirstItem || null;
+      const newestItem = list[0] || null;
+
+      const nextSelected = keep || currentCameraNewestItem || newestItem;
 
       setSelected(nextSelected);
+
+      if (!keep && nextSelected?.cameraPath) {
+        setSelectedCameraPath(nextSelected.cameraPath);
+      }
+
       setVideoNonce(Date.now());
     } catch (err) {
       setError(err?.message || "โหลดรายการวิดีโอไม่สำเร็จ");
@@ -506,6 +490,7 @@ export default function CameraRecordingsPage() {
 
   function handleSelect(item) {
     setSelected(item);
+    setSelectedCameraPath(item.cameraPath || selectedCameraPath);
     setVideoError("");
     setVideoLoading(true);
     setVideoNonce(Date.now());
@@ -516,9 +501,11 @@ export default function CameraRecordingsPage() {
     setVideoError("");
     setVideoLoading(false);
 
-    const firstItem = items.find((item) => item.cameraPath === nextPath);
+    const nextCameraItems = sortNewestFirst(
+      items.filter((item) => item.cameraPath === nextPath)
+    );
 
-    setSelected(firstItem || null);
+    setSelected(nextCameraItems[0] || null);
     setVideoNonce(Date.now());
   }
 
@@ -568,9 +555,7 @@ export default function CameraRecordingsPage() {
       setRetentionNow(Date.now());
     }, 60 * 1000);
 
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, []);
 
   const selectedCameraGroup = useMemo(() => {
@@ -581,7 +566,9 @@ export default function CameraRecordingsPage() {
   }, [selectedCameraPath]);
 
   const selectedCameraItems = useMemo(() => {
-    return items.filter((item) => item.cameraPath === selectedCameraPath);
+    return sortNewestFirst(
+      items.filter((item) => item.cameraPath === selectedCameraPath)
+    );
   }, [items, selectedCameraPath]);
 
   const totalSizeText = useMemo(() => {
@@ -637,57 +624,49 @@ export default function CameraRecordingsPage() {
     const timer = setTimeout(() => {
       video.src = videoUrl;
       video.load();
-    }, 150);
+    }, 120);
 
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [videoUrl]);
+
+  const newestVideo = items[0] || null;
 
   return (
     <AppShell>
       <main className={pageContainer} style={{ fontFamily: APP_FONT_FAMILY }}>
         <div className="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
           <section className={cn(cardClass, "mb-5 overflow-hidden")}>
-            <div className="border-b border-sky-100/80 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/50 px-5 py-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="border-b border-slate-200 bg-white px-5 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-white text-blue-700 shadow-sm shadow-sky-100">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-blue-700">
                       <VideoIcon name="video" />
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h1 className="text-xl font-bold tracking-tight text-slate-950">
-                          วิดีโอที่บันทึกไว้
-                        </h1>
-
-                        <span className="rounded-full border border-sky-100 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 shadow-sm">
-                          Clean View
-                        </span>
-                      </div>
+                      <h1 className="text-xl font-bold tracking-tight text-slate-950">
+                        วิดีโอที่บันทึกไว้
+                      </h1>
 
                       <p className="mt-1 text-sm font-medium text-slate-500">
-                        ศูนย์จัดการวิดีโอจากกล้องย้อนหลัง
+                        ดูวิดีโอย้อนหลังแบบเรียบง่าย เรียงจากรายการล่าสุดก่อนเสมอ
                       </p>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Pill tone="blue">Recorded Video</Pill>
-                    <Pill tone={items.length > 0 ? "green" : "slate"}>
-                      รวม {items.length} ไฟล์
-                    </Pill>
-                    {selected && (
-                      <Pill tone="violet">
-                        กำลังเลือก {selected.cameraName || selected.cameraPath}
-                      </Pill>
-                    )}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Pill tone={items.length > 0 ? "green" : "slate"}>
+                    รวม {items.length} ไฟล์
+                  </Pill>
+
+                  {newestVideo && (
+                    <Pill tone="blue">
+                      ล่าสุด {formatDateTime(getDisplayTime(newestVideo))}
+                    </Pill>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => loadItems(selected?.id)}
@@ -697,7 +676,7 @@ export default function CameraRecordingsPage() {
                     <span className={loading ? "animate-spin" : ""}>
                       <VideoIcon name="reload" />
                     </span>
-                    รีเฟรชข้อมูล
+                    รีเฟรช
                   </button>
                 </div>
               </div>
@@ -710,10 +689,6 @@ export default function CameraRecordingsPage() {
 
               <p className="text-sm font-bold text-slate-700">
                 กำลังโหลดรายการวิดีโอ...
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-slate-400">
-                กรุณารอสักครู่
               </p>
             </section>
           )}
@@ -731,29 +706,32 @@ export default function CameraRecordingsPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_540px]">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
               <section className="space-y-5">
                 <div className={softCardClass}>
-                  <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
-                    <div>
-                      <SectionLabel>Video Player</SectionLabel>
+                  <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0">
+                      <SectionLabel>Player</SectionLabel>
 
-                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
-                        เครื่องเล่นวิดีโอ
+                      <h2 className="mt-2 truncate text-base font-bold tracking-tight text-slate-950">
+                        {selected ? getItemTitle(selected) : "ยังไม่ได้เลือกวิดีโอ"}
                       </h2>
 
-                      <p className="mt-1 text-xs font-medium text-slate-500">
+                      <p className="mt-1 truncate text-xs font-medium text-slate-500">
                         {selected
-                          ? getItemSubTitle(selected)
-                          : "ยังไม่ได้เลือกวิดีโอ"}
+                          ? `${selected.cameraName || selected.cameraPath || "กล้อง"} • ${formatDateTime(
+                              getDisplayTime(selected)
+                            )}`
+                          : "เลือกวิดีโอจากรายการด้านขวา"}
                       </p>
                     </div>
 
                     {selected && (
                       <div className="flex flex-wrap gap-2">
                         <Pill tone="green">พร้อมเล่น</Pill>
-                        <SessionInfoBadge item={selected} />
-                        <RetentionBadge item={selected} nowMs={retentionNow} />
+                        <Pill tone={getRetentionTone(selected, retentionNow)}>
+                          ลบใน {formatRemainingTime(selected, retentionNow)}
+                        </Pill>
                       </div>
                     )}
                   </div>
@@ -786,7 +764,7 @@ export default function CameraRecordingsPage() {
                                   onClick={retryVideo}
                                   className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200"
                                 >
-                                  ลองเล่นวิดีโอใหม่
+                                  ลองเล่นใหม่
                                 </button>
 
                                 {rawVideoUrl && (
@@ -806,7 +784,7 @@ export default function CameraRecordingsPage() {
                           <video
                             ref={videoRef}
                             controls
-                            preload="auto"
+                            preload="metadata"
                             playsInline
                             crossOrigin="use-credentials"
                             className="absolute inset-0 h-full w-full object-contain"
@@ -816,15 +794,9 @@ export default function CameraRecordingsPage() {
                                 setVideoError("");
                               }
                             }}
-                            onLoadedMetadata={() => {
-                              setVideoLoading(false);
-                            }}
-                            onCanPlay={() => {
-                              setVideoLoading(false);
-                            }}
-                            onPlaying={() => {
-                              setVideoLoading(false);
-                            }}
+                            onLoadedMetadata={() => setVideoLoading(false)}
+                            onCanPlay={() => setVideoLoading(false)}
+                            onPlaying={() => setVideoLoading(false)}
                             onError={() => {
                               setVideoLoading(false);
                               setVideoError(
@@ -844,7 +816,7 @@ export default function CameraRecordingsPage() {
                           </div>
 
                           <div className="max-w-md px-6 text-sm text-slate-500">
-                            เลือกกล้องด้านขวาเพื่อดูรายการวิดีโอที่บันทึกไว้
+                            เมื่อมีการบันทึกวิดีโอ รายการล่าสุดจะแสดงขึ้นมาก่อน
                           </div>
                         </div>
                       )}
@@ -854,34 +826,59 @@ export default function CameraRecordingsPage() {
 
                 {selected ? (
                   <div className={cn(cardClass, "overflow-hidden")}>
-                    <div className="flex flex-col justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4 sm:flex-row sm:items-center">
+                    <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center">
                       <div>
-                        <SectionLabel>Video Details</SectionLabel>
+                        <SectionLabel>Details</SectionLabel>
 
                         <h3 className="mt-2 text-base font-bold tracking-tight text-slate-950">
                           รายละเอียดวิดีโอ
                         </h3>
-
-                        <p className="mt-1 text-xs font-medium text-slate-500">
-                          ข้อมูลไฟล์ รายละเอียดการบันทึก และเวลาคงเหลือก่อนลบอัตโนมัติ
-                        </p>
                       </div>
 
-                      <SessionInfoBadge item={selected} />
+                      <div className="flex flex-wrap gap-2">
+                        {downloadUrl && (
+                          <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={primaryButton}
+                          >
+                            <VideoIcon name="download" />
+                            ดาวน์โหลด
+                          </a>
+                        )}
+
+                        {rawVideoUrl && (
+                          <a
+                            href={rawVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={outlineButton}
+                          >
+                            <VideoIcon name="external" />
+                            เปิดไฟล์ตรง
+                          </a>
+                        )}
+
+                        {/* <button
+                          type="button"
+                          onClick={deleteSelected}
+                          disabled={actionLoading || !selected}
+                          className={dangerOutlineButton}
+                        >
+                          <VideoIcon name="trash" />
+                          {actionLoading ? "กำลังลบ..." : "ลบไฟล์"}
+                        </button> */}
+                      </div>
                     </div>
 
                     <div className="p-5">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <DetailBox
-                          label="คำอธิบาย"
-                          value={getItemTitle(selected)}
-                        />
+                        <DetailBox label="ประเภท" value={getItemTitle(selected)} />
 
                         <DetailBox
                           label="กล้อง"
-                          value={
-                            selected.cameraName || selected.cameraPath || "-"
-                          }
+                          value={selected.cameraName || selected.cameraPath || "-"}
                         />
 
                         <DetailBox
@@ -890,13 +887,8 @@ export default function CameraRecordingsPage() {
                         />
 
                         <DetailBox
-                          label="เริ่มบันทึก"
-                          value={formatDateTime(selected.startTime)}
-                        />
-
-                        <DetailBox
-                          label="หยุดบันทึก"
-                          value={formatDateTime(selected.endTime)}
+                          label="วันที่บันทึก"
+                          value={formatDateTime(getDisplayTime(selected))}
                         />
 
                         <DetailBox
@@ -910,27 +902,24 @@ export default function CameraRecordingsPage() {
                         />
 
                         <DetailBox
-                          label="เวลาคงเหลือ"
+                          label="ลบอัตโนมัติใน"
                           value={formatRemainingTime(selected, retentionNow)}
+                        />
+
+                        <DetailBox
+                          label="วันเวลาที่จะลบ"
+                          value={getAutoDeleteAtText(selected)}
                         />
 
                         <DetailBox
                           label="ชื่อไฟล์"
                           value={selected.fileName}
-                          className="sm:col-span-2"
-                        />
-
-                        <DetailBox
-                          label="จะถูกลบอัตโนมัติ"
-                          value={getAutoDeleteAtText(selected)}
-                          className="sm:col-span-2"
+                          className="sm:col-span-2 lg:col-span-4"
                         />
                       </div>
 
-                      <RetentionPanel item={selected} nowMs={retentionNow} />
-
                       {selected.note && (
-                        <div className="mt-3 rounded-2xl border border-sky-100 bg-slate-50/70 px-4 py-3">
+                        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                           <p className="mb-1 text-xs font-bold text-slate-500">
                             หมายเหตุ / เลขเอกสาร
                           </p>
@@ -940,42 +929,6 @@ export default function CameraRecordingsPage() {
                           </p>
                         </div>
                       )}
-
-                      <div className="mt-5 flex flex-wrap gap-2 border-t border-sky-100 pt-4">
-                        {downloadUrl && (
-                          <a
-                            href={downloadUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={primaryButton}
-                          >
-                            <VideoIcon name="download" />
-                            ดาวน์โหลดวิดีโอ
-                          </a>
-                        )}
-
-                        {rawVideoUrl && (
-                          <a
-                            href={rawVideoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={outlineButton}
-                          >
-                            <VideoIcon name="external" />
-                            เปิดลิงก์วิดีโอตรง
-                          </a>
-                        )}
-
-                        {/* <button
-                          type="button"
-                          onClick={deleteSelected}
-                          disabled={actionLoading || !selected}
-                          className={dangerOutlineButton}
-                        >
-                          <VideoIcon name="trash" />
-                          {actionLoading ? "กำลังลบ..." : "ลบไฟล์วิดีโอ"}
-                        </button> */}
-                      </div>
                     </div>
                   </div>
                 ) : (
@@ -986,118 +939,62 @@ export default function CameraRecordingsPage() {
                 )}
               </section>
 
-              <aside
-                className={cn(
-                  softCardClass,
-                  "flex h-fit max-h-screen flex-col"
-                )}
-              >
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sky-100/80 bg-gradient-to-r from-white via-sky-50/60 to-blue-50/40 px-5 py-4">
-                  <div>
-                    <SectionLabel>Recorded List</SectionLabel>
+              <aside className={cn(softCardClass, "flex h-fit max-h-screen flex-col")}>
+                <div className="border-b border-slate-200 bg-white px-5 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <SectionLabel>Recordings</SectionLabel>
 
-                    <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
-                      วิดีโอที่บันทึกไว้
-                    </h2>
+                      <h2 className="mt-2 text-base font-bold tracking-tight text-slate-950">
+                        รายการวิดีโอ
+                      </h2>
 
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      เลือกกล้องที่ต้องการดูรายการวิดีโอ
-                    </p>
+                      <p className="mt-1 text-xs font-medium text-slate-500">
+                        เรียงจากใหม่ไปเก่า
+                      </p>
+                    </div>
+
+                    <Pill tone={selectedCameraItems.length > 0 ? "green" : "slate"}>
+                      {selectedCameraItems.length} ไฟล์
+                    </Pill>
                   </div>
 
-                  <Pill tone={selectedCameraItems.length > 0 ? "green" : "slate"}>
-                    {selectedCameraItems.length} ไฟล์
-                  </Pill>
-                </div>
+                  <div className="mt-4">
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
+                      เลือกกล้อง
+                    </label>
 
-                <div className="border-b border-sky-100/80 bg-slate-50/60 p-4">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600">
-                    เลือกกล้อง
-                  </label>
+                    <select
+                      value={selectedCameraPath}
+                      onChange={(e) => handleCameraPathChange(e.target.value)}
+                      className={cn(inputClass, "w-full")}
+                    >
+                      {CAMERA_GROUPS.map((camera) => (
+                        <option key={camera.path} value={camera.path}>
+                          {camera.name} — {countByCamera[camera.path] || 0} ไฟล์
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    value={selectedCameraPath}
-                    onChange={(e) => handleCameraPathChange(e.target.value)}
-                    className={cn(inputClass, "w-full")}
-                  >
-                    {CAMERA_GROUPS.map((camera) => (
-                      <option key={camera.path} value={camera.path}>
-                        {camera.name} — {countByCamera[camera.path] || 0} ไฟล์
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          {selectedCameraGroup?.name || "กล้อง"}
+                        </p>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {CAMERA_GROUPS.map((camera) => {
-                      const active = selectedCameraPath === camera.path;
-                      const fileCount = countByCamera[camera.path] || 0;
+                        <p className="mt-0.5 text-xs font-medium text-slate-500">
+                          รวมพื้นที่ {totalSizeText}
+                        </p>
+                      </div>
 
-                      return (
-                        <button
-                          key={camera.path}
-                          type="button"
-                          onClick={() => handleCameraPathChange(camera.path)}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-blue-100/70",
-                            active
-                              ? "border-blue-300 bg-blue-50/80 shadow-blue-100"
-                              : "border-sky-100 bg-white/90 hover:border-blue-200 hover:bg-blue-50/50"
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={cn(
-                                "text-xs font-bold",
-                                active ? "text-blue-700" : "text-slate-700"
-                              )}
-                            >
-                              {camera.name}
-                            </span>
-
-                            <span
-                              className={cn(
-                                "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                                active
-                                  ? "bg-white text-blue-700"
-                                  : "bg-slate-100 text-slate-500"
-                              )}
-                            >
-                              {fileCount}
-                            </span>
-                          </div>
-
-                          <p className="mt-1 text-[11px] font-medium text-slate-400">
-                            {camera.path}
-                          </p>
-                        </button>
-                      );
-                    })}
+                      <Pill tone="blue">{selectedCameraPath}</Pill>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 [scrollbar-color:#bae6fd_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-sky-50/50">
-                  <div className="mb-3 flex items-center justify-between gap-3 rounded-3xl border border-sky-100 bg-white/80 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        {selectedCameraGroup?.name || "กล้อง"}
-                      </p>
-
-                      <p className="mt-0.5 text-xs font-medium text-slate-500">
-                        Path: {selectedCameraPath}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <Pill tone={selectedCameraItems.length > 0 ? "green" : "slate"}>
-                        {selectedCameraItems.length} รายการ
-                      </Pill>
-
-                      <span className="text-[11px] font-bold text-slate-400">
-                        รวม {totalSizeText}
-                      </span>
-                    </div>
-                  </div>
-
                   {selectedCameraItems.length === 0 ? (
                     <EmptyState
                       title={`ยังไม่มีไฟล์วิดีโอของ ${
@@ -1107,19 +1004,15 @@ export default function CameraRecordingsPage() {
                     />
                   ) : (
                     <div className="space-y-2">
-                      {selectedCameraItems.map((item) => {
+                      {selectedCameraItems.map((item, index) => {
                         const active = selected?.id === item.id;
-                        const retentionTone = getRetentionTone(
-                          item,
-                          retentionNow
-                        );
 
                         return (
                           <RecordingItemCard
                             key={item.id}
                             item={item}
                             active={active}
-                            retentionTone={retentionTone}
+                            isNewest={index === 0}
                             retentionNow={retentionNow}
                             onClick={() => handleSelect(item)}
                           />
@@ -1137,46 +1030,10 @@ export default function CameraRecordingsPage() {
   );
 }
 
-function RetentionPanel({ item, nowMs }) {
-  const tone = getRetentionTone(item, nowMs);
+function RecordingItemCard({ item, active, isNewest, retentionNow, onClick }) {
+  const retentionTone = getRetentionTone(item, retentionNow);
+  const displayTime = getDisplayTime(item);
 
-  const toneClass =
-    tone === "red"
-      ? "border-rose-200 bg-rose-50 text-rose-800"
-      : tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
-      : tone === "green"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : "border-slate-200 bg-slate-50 text-slate-800";
-
-  return (
-    <div className={cn("mt-3 rounded-3xl border px-4 py-3", toneClass)}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold">
-            {formatRemainingTime(item, nowMs)}
-          </p>
-
-          <p className="mt-1 text-xs font-medium text-slate-600">
-            ระบบจะลบไฟล์นี้อัตโนมัติเมื่อครบ {getRetentionDays(item)} วัน
-          </p>
-        </div>
-
-        <RetentionBadge item={item} nowMs={nowMs} />
-      </div>
-
-      <RetentionProgress item={item} nowMs={nowMs} />
-    </div>
-  );
-}
-
-function RecordingItemCard({
-  item,
-  active,
-  retentionTone,
-  retentionNow,
-  onClick,
-}) {
   return (
     <button
       type="button"
@@ -1184,92 +1041,70 @@ function RecordingItemCard({
       className={cn(
         "w-full rounded-3xl border p-4 text-left transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-100/70",
         active
-          ? "border-blue-300 bg-blue-50/80 shadow-sm shadow-blue-100"
-          : "border-sky-100 bg-white/90 hover:border-blue-200 hover:bg-sky-50/50 hover:shadow-sm"
+          ? "border-blue-300 bg-blue-50 shadow-sm shadow-blue-100"
+          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-sky-50/60 hover:shadow-sm"
       )}
     >
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <div className="min-w-0 pr-2">
-          <p className="truncate text-sm font-bold text-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {isNewest && <Pill tone="blue">ล่าสุด</Pill>}
+
+            <Pill tone={item.hasSessionInfo ? "green" : "slate"}>
+              {item.hasSessionInfo ? "มีข้อมูลบันทึก" : "ไฟล์วิดีโอ"}
+            </Pill>
+          </div>
+
+          <p className="mt-2 truncate text-sm font-bold text-slate-950">
             {getItemTitle(item)}
           </p>
 
-          <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
-            {item.fileName}
+          <p className="mt-1 truncate text-xs font-medium text-slate-500">
+            {formatDateTime(displayTime)}
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <SessionInfoBadge item={item} />
+        <div className="shrink-0 text-right">
+          <p className="text-xs font-bold text-slate-900">
+            {formatDuration(item.duration)}
+          </p>
 
-          <RetentionBadge item={item} nowMs={retentionNow} compact />
+          <p className="mt-1 text-[11px] font-medium text-slate-400">
+            {item.sizeLabel || formatSize(item.size)}
+          </p>
         </div>
       </div>
 
-      <div className="my-3 h-px w-full bg-sky-100/80" />
-
-      <div className="space-y-1.5 text-[11px] text-slate-600">
-        <RowInfo label="ผู้บันทึก" value={item.recorderName || "-"} />
-
-        <RowInfo
-          label="เวลาเริ่ม"
-          value={formatDateTime(item.startTime || item.modifiedAt)}
-        />
-
-        <RowInfo label="ระยะเวลา" value={formatDuration(item.duration)} />
-
-        <RowInfo
-          label="ขนาดไฟล์"
-          value={item.sizeLabel || formatSize(item.size)}
-        />
-
-        <RowInfo label="จะถูกลบ" value={getAutoDeleteAtText(item)} />
-
-        <div className="flex justify-between gap-3">
-          <span className="text-slate-400">ลบอัตโนมัติ:</span>
-
-          <span
-            className={cn(
-              "font-bold",
-              retentionTone === "red"
-                ? "text-rose-700"
-                : retentionTone === "amber"
-                ? "text-amber-700"
-                : retentionTone === "green"
-                ? "text-emerald-700"
-                : "text-slate-700"
-            )}
-          >
-            {formatRemainingTime(item, retentionNow)}
-          </span>
-        </div>
-
-        <RetentionProgress item={item} nowMs={retentionNow} />
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+        <CompactInfo label="ผู้บันทึก" value={item.recorderName || "-"} />
+        <CompactInfo label="ลบใน" value={formatRemainingTime(item, retentionNow)} tone={retentionTone} />
       </div>
 
       {item.note && (
-        <div className="mt-3 border-t border-sky-100 pt-2">
-          <p className="mb-0.5 text-[11px] font-bold text-slate-400">
-            หมายเหตุ:
-          </p>
-
-          <p className="line-clamp-2 text-xs font-medium leading-relaxed text-slate-700">
-            {item.note}
-          </p>
-        </div>
+        <p className="mt-3 line-clamp-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs font-medium leading-relaxed text-slate-600">
+          {item.note}
+        </p>
       )}
     </button>
   );
 }
 
-function RowInfo({ label, value }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <span className="shrink-0 text-slate-400">{label}:</span>
+function CompactInfo({ label, value, tone = "slate" }) {
+  const valueClass =
+    tone === "red"
+      ? "text-rose-700"
+      : tone === "amber"
+      ? "text-amber-700"
+      : tone === "green"
+      ? "text-emerald-700"
+      : "text-slate-800";
 
-      <span className="truncate pl-2 font-bold text-slate-800">
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+      <p className="text-[10px] font-bold text-slate-400">{label}</p>
+      <p className={cn("mt-0.5 truncate text-xs font-bold", valueClass)}>
         {value || "-"}
-      </span>
+      </p>
     </div>
   );
 }
@@ -1291,15 +1126,6 @@ function VideoIcon({ name }) {
       <svg {...common}>
         <path d="M15 10.5 21 7v10l-6-3.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3.5Z" />
         <path d="M7 9h4" />
-      </svg>
-    );
-  }
-
-  if (name === "camera") {
-    return (
-      <svg {...common}>
-        <path d="M14.5 10.5 20 7.5v9l-5.5-3" />
-        <rect x="3" y="6" width="12" height="12" rx="2.5" />
       </svg>
     );
   }
