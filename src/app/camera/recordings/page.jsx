@@ -45,14 +45,16 @@ function cn(...classes) {
 }
 
 function normalizeBaseUrl(url) {
-  return String(url || "").trim().replace(/\/+$/, "");
+  return String(url || "")
+    .trim()
+    .replace(/\/+$/, "");
 }
 
 function getApiBaseUrl() {
   return normalizeBaseUrl(
     process.env.NEXT_PUBLIC_API_BASE_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:4000/api"
+      "http://localhost:4000/api",
   );
 }
 
@@ -172,7 +174,7 @@ function toTimeMs(value) {
 
 function parseMediaMtxFileTime(fileName) {
   const match = String(fileName || "").match(
-    /^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/
+    /^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/,
   );
 
   if (!match) return null;
@@ -185,7 +187,7 @@ function parseMediaMtxFileTime(fileName) {
     Number(dd),
     Number(hh),
     Number(mi),
-    Number(ss)
+    Number(ss),
   );
 
   const ms = date.getTime();
@@ -357,7 +359,7 @@ function DetailBox({ label, value, className = "" }) {
     <div
       className={cn(
         "rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3",
-        className
+        className,
       )}
     >
       <p className="mb-1 text-xs font-bold text-slate-500">{label}</p>
@@ -377,7 +379,7 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
         "flex flex-col justify-between gap-4 rounded-3xl border px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center",
         isError
           ? "border-rose-200 bg-rose-50 text-rose-700"
-          : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-emerald-200 bg-emerald-50 text-emerald-700",
       )}
     >
       <div>
@@ -393,7 +395,7 @@ function AlertBox({ type = "success", title, message, onAction, actionText }) {
             "rounded-2xl border bg-white px-3 py-2 text-sm font-bold transition",
             isError
               ? "border-rose-200 text-rose-700 hover:bg-rose-50"
-              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50",
           )}
         >
           {actionText}
@@ -454,7 +456,7 @@ export default function CameraRecordingsPage() {
         {
           cache: "no-store",
         },
-        router
+        router,
       );
 
       const list = sortNewestFirst(Array.isArray(json.data) ? json.data : []);
@@ -465,7 +467,7 @@ export default function CameraRecordingsPage() {
       const keep = keepId ? list.find((item) => item.id === keepId) : null;
 
       const currentCameraNewestItem = list.find(
-        (item) => item.cameraPath === selectedCameraPath
+        (item) => item.cameraPath === selectedCameraPath,
       );
 
       const newestItem = list[0] || null;
@@ -502,7 +504,7 @@ export default function CameraRecordingsPage() {
     setVideoLoading(false);
 
     const nextCameraItems = sortNewestFirst(
-      items.filter((item) => item.cameraPath === nextPath)
+      items.filter((item) => item.cameraPath === nextPath),
     );
 
     setSelected(nextCameraItems[0] || null);
@@ -519,7 +521,7 @@ export default function CameraRecordingsPage() {
     if (!selected?.id) return;
 
     const ok = window.confirm(
-      `ต้องการลบไฟล์วิดีโอนี้ใช่ไหม?\n${getItemName(selected)}`
+      `ต้องการลบไฟล์วิดีโอนี้ใช่ไหม?\n${getItemName(selected)}`,
     );
 
     if (!ok) return;
@@ -534,7 +536,7 @@ export default function CameraRecordingsPage() {
         {
           method: "DELETE",
         },
-        router
+        router,
       );
 
       await loadItems("");
@@ -567,14 +569,14 @@ export default function CameraRecordingsPage() {
 
   const selectedCameraItems = useMemo(() => {
     return sortNewestFirst(
-      items.filter((item) => item.cameraPath === selectedCameraPath)
+      items.filter((item) => item.cameraPath === selectedCameraPath),
     );
   }, [items, selectedCameraPath]);
 
   const totalSizeText = useMemo(() => {
     const total = selectedCameraItems.reduce(
       (sum, item) => sum + Number(item.size || 0),
-      0
+      0,
     );
 
     return formatSize(total);
@@ -584,23 +586,23 @@ export default function CameraRecordingsPage() {
     if (!selected?.id) return "";
 
     return withAccessToken(
-      `${apiBaseUrl}/recording-files/${selected.id}/browser-video?t=${videoNonce}`
+      `${apiBaseUrl}/recording-files/${selected.id}/browser-video`,
     );
-  }, [selected, apiBaseUrl, videoNonce]);
+  }, [selected, apiBaseUrl]);
 
   const rawVideoUrl = useMemo(() => {
     if (!selected?.id) return "";
 
     return withAccessToken(
-      `${apiBaseUrl}/recording-files/${selected.id}/raw-video?t=${videoNonce}`
+      `${apiBaseUrl}/recording-files/${selected.id}/raw-video`,
     );
-  }, [selected, apiBaseUrl, videoNonce]);
+  }, [selected, apiBaseUrl]);
 
   const downloadUrl = useMemo(() => {
     if (!selected?.id) return "";
 
     return withAccessToken(
-      `${apiBaseUrl}/recording-files/${selected.id}/download`
+      `${apiBaseUrl}/recording-files/${selected.id}/download`,
     );
   }, [selected, apiBaseUrl]);
 
@@ -650,7 +652,8 @@ export default function CameraRecordingsPage() {
                       </h1>
 
                       <p className="mt-1 text-sm font-medium text-slate-500">
-                        ดูวิดีโอย้อนหลังแบบเรียบง่าย เรียงจากรายการล่าสุดก่อนเสมอ
+                        ดูวิดีโอย้อนหลังแบบเรียบง่าย
+                        เรียงจากรายการล่าสุดก่อนเสมอ
                       </p>
                     </div>
                   </div>
@@ -714,13 +717,15 @@ export default function CameraRecordingsPage() {
                       <SectionLabel>Player</SectionLabel>
 
                       <h2 className="mt-2 truncate text-base font-bold tracking-tight text-slate-950">
-                        {selected ? getItemTitle(selected) : "ยังไม่ได้เลือกวิดีโอ"}
+                        {selected
+                          ? getItemTitle(selected)
+                          : "ยังไม่ได้เลือกวิดีโอ"}
                       </h2>
 
                       <p className="mt-1 truncate text-xs font-medium text-slate-500">
                         {selected
                           ? `${selected.cameraName || selected.cameraPath || "กล้อง"} • ${formatDateTime(
-                              getDisplayTime(selected)
+                              getDisplayTime(selected),
                             )}`
                           : "เลือกวิดีโอจากรายการด้านขวา"}
                       </p>
@@ -800,7 +805,7 @@ export default function CameraRecordingsPage() {
                             onError={() => {
                               setVideoLoading(false);
                               setVideoError(
-                                "ไม่สามารถเปิดเล่นวิดีโอได้ ไฟล์อาจถูกลบหรือเบราว์เซอร์ยังอ่านไฟล์นี้ไม่ได้"
+                                "ไม่สามารถเปิดเล่นวิดีโอได้ ไฟล์อาจถูกลบหรือเบราว์เซอร์ยังอ่านไฟล์นี้ไม่ได้",
                               );
                             }}
                           />
@@ -874,11 +879,16 @@ export default function CameraRecordingsPage() {
 
                     <div className="p-5">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <DetailBox label="ประเภท" value={getItemTitle(selected)} />
+                        <DetailBox
+                          label="ประเภท"
+                          value={getItemTitle(selected)}
+                        />
 
                         <DetailBox
                           label="กล้อง"
-                          value={selected.cameraName || selected.cameraPath || "-"}
+                          value={
+                            selected.cameraName || selected.cameraPath || "-"
+                          }
                         />
 
                         <DetailBox
@@ -898,7 +908,9 @@ export default function CameraRecordingsPage() {
 
                         <DetailBox
                           label="ขนาดไฟล์"
-                          value={selected.sizeLabel || formatSize(selected.size)}
+                          value={
+                            selected.sizeLabel || formatSize(selected.size)
+                          }
                         />
 
                         <DetailBox
@@ -939,7 +951,12 @@ export default function CameraRecordingsPage() {
                 )}
               </section>
 
-              <aside className={cn(softCardClass, "flex h-fit max-h-screen flex-col")}>
+              <aside
+                className={cn(
+                  softCardClass,
+                  "flex h-fit max-h-screen flex-col",
+                )}
+              >
                 <div className="border-b border-slate-200 bg-white px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -954,7 +971,9 @@ export default function CameraRecordingsPage() {
                       </p>
                     </div>
 
-                    <Pill tone={selectedCameraItems.length > 0 ? "green" : "slate"}>
+                    <Pill
+                      tone={selectedCameraItems.length > 0 ? "green" : "slate"}
+                    >
                       {selectedCameraItems.length} ไฟล์
                     </Pill>
                   </div>
@@ -1042,7 +1061,7 @@ function RecordingItemCard({ item, active, isNewest, retentionNow, onClick }) {
         "w-full rounded-3xl border p-4 text-left transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-100/70",
         active
           ? "border-blue-300 bg-blue-50 shadow-sm shadow-blue-100"
-          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-sky-50/60 hover:shadow-sm"
+          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-sky-50/60 hover:shadow-sm",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1077,7 +1096,11 @@ function RecordingItemCard({ item, active, isNewest, retentionNow, onClick }) {
 
       <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
         <CompactInfo label="ผู้บันทึก" value={item.recorderName || "-"} />
-        <CompactInfo label="ลบใน" value={formatRemainingTime(item, retentionNow)} tone={retentionTone} />
+        <CompactInfo
+          label="ลบใน"
+          value={formatRemainingTime(item, retentionNow)}
+          tone={retentionTone}
+        />
       </div>
 
       {item.note && (
@@ -1094,10 +1117,10 @@ function CompactInfo({ label, value, tone = "slate" }) {
     tone === "red"
       ? "text-rose-700"
       : tone === "amber"
-      ? "text-amber-700"
-      : tone === "green"
-      ? "text-emerald-700"
-      : "text-slate-800";
+        ? "text-amber-700"
+        : tone === "green"
+          ? "text-emerald-700"
+          : "text-slate-800";
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
